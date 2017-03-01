@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  name: cicdpipeline
+  namespace: cicd
+  labels:
+    name: cicdpipeline
+  annotations:
+    pipeline.alpha.openshift.io/uses: '[{"name": "myapp", "namespace": "", "kind": "DeploymentConfig"}]'
+spec:
+  triggers:
+    - type: GitHub
+      github:
+        secret: secret101
+    - type: Generic
+      generic:
+        secret: secret101
+  runPolicy: Serial
+  source:
+    type: None
+  strategy:
+    type: JenkinsPipeline
+    jenkinsPipelineStrategy:
+      jenkinsfile: >-
+        node('maven') {
+
+        stage 'buildInDevelopment'
+
+        openshiftBuild(namespace: 'development', buildConfig: 'myapp',
+        showBuildLogs: 'true')
+
+        stage 'deployInDevelopment'
+
+        openshiftDeploy(namespace: 'development', deploymentConfig: 'myapp')
+
+        openshiftScale(namespace: 'development', deploymentConfig:
+        'myapp',replicaCount: '1')
+
+        stage 'deployInTest'
+
+        openshiftTag(namespace: 'development', sourceStream: 'myapp', 
+        sourceTag: 'latest', destinationStream: 'myapp', destinationTag:
+        'promoteToQA')
+
+        openshiftDeploy(namespace: 'testing', deploymentConfig: 'myapp')
+
+        openshiftScale(namespace: 'testing', deploymentConfig:
+        'myapp',replicaCount: '2')
+
+        stage 'deployInProduction'
+
+        openshiftTag(namespace: 'development', sourceStream: 'myapp', 
+        sourceTag: 'promoteToQA', destinationStream: 'myapp', destinationTag:
+        'promoteToProd')
+
+        input 'Do you want to deploy this application in production?'
+
+        openshiftDeploy(namespace: 'production', deploymentConfig: 'myapp')
+
+        openshiftScale(namespace: 'production', deploymentConfig:
+        'myapp',replicaCount: '2')
+
+        }
+  output: {}
+  resources: {}
+  postCommit: {}
