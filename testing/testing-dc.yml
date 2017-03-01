@@ -23,7 +23,7 @@ spec:
         deployment-config.name: myapp
     spec:
       containers:
-        - name: myapp-container
+        - name: default-container
           image: '172.30.253.239:5000/development/myapp:promoteToQA'
           resources: {}
           terminationMessagePath: /dev/termination-log
