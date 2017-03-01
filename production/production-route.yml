@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Route
+metadata:
+  name: myapp
+  namespace: production
+spec:
+  host: myapp.cloudapps.example.com
+  to:
+    kind: Service
+    name: myapp
+    weight: 100
+  port:
+    targetPort: 8080
+  wildcardPolicy: None
