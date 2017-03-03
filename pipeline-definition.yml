@@ -42,9 +42,9 @@ spec:
         sourceTag: 'latest', destinationStream: 'myapp', destinationTag:
         'promoteToQA')
 
-        openshiftDeploy(namespace: 'testing', deploymentConfig: 'myapp')
+        openshiftDeploy(namespace: 'test', deploymentConfig: 'myapp')
 
-        openshiftScale(namespace: 'testing', deploymentConfig:
+        openshiftScale(namespace: 'test', deploymentConfig:
         'myapp',replicaCount: '2')
 
         stage 'deployInProduction'
