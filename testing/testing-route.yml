@@ -2,9 +2,9 @@ apiVersion: v1
 kind: Route
 metadata:
   name: myapp
-  namespace: testing
+  namespace: test
 spec:
-  host: myapp-testing.cloudapps.example.com
+  host: myapp-test.cloudapps.example.com
   to:
     kind: Service
     name: myapp
