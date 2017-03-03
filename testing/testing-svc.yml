@@ -1,7 +1,7 @@
 kind: Service
 metadata:
   name: myapp
-  namespace: testing
+  namespace: test
 spec:
   ports:
     - protocol: TCP
