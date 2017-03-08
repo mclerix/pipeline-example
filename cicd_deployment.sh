@@ -307,14 +307,14 @@ function do_gitlab() {
 }
 
 function do_populate_gitlab() {
-  # GET root private token
+  # GET root private token in order to create a new user
   ROOT_PRIVATE_TOKEN=$(curl http://$(echo "$GITLAB_APPLICATION_HOSTNAME")/api/v3/session --data "login=root&password=$(echo "$GITLAB_ROOT_PASSWORD")" | python -c "import sys, json; print json.load(sys.stdin)['private_token']")
 
-  # Create a user
-  curl --header "PRIVATE-TOKEN: $(echo "$ROOT_PRIVATE_TOKEN")" --data "email=$(echo "$USER_MAIL")&username=$(echo "$USER_USERNAME")&name=$(echo "$USER_NAME")&password=$(echo "$USER_PASSWORD")" http://gitlab.cloudapps.example.com/api/v3/users
+  # Create a user that will hold the reference application
+  curl --header "PRIVATE-TOKEN: $(echo "$ROOT_PRIVATE_TOKEN")" --data "email=$(echo "$USER_MAIL")&username=$(echo "$USER_USERNAME")&name=$(echo "$USER_NAME")&password=$(echo "$USER_PASSWORD")" http://$(echo "$GITLAB_APPLICATION_HOSTNAME")/api/v3/users
   PRIVATE_TOKEN=$(curl http://$(echo "$GITLAB_APPLICATION_HOSTNAME")/api/v3/session --data "login=$(echo "$USER_USERNAME")&password=$(echo "$USER_PASSWORD")" | python -c "import sys, json; print json.load(sys.stdin)['private_token']")
 
-  # Create a project
+  # Create the project for the reference application
   curl --header "PRIVATE-TOKEN: $(echo "$PRIVATE_TOKEN")" --data "name=$(echo "$REFERENCE_APPLICATION_NAME")&import_url=$(echo "$REFERENCE_APPLICATION_IMPORT_URL")&public=true" http://$(echo "$GITLAB_APPLICATION_HOSTNAME")/api/v3/projects
 
   do_deploy_pipeline
@@ -346,7 +346,8 @@ function do_deploy_pipeline() {
   oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/production/production-route.yml -n production
 
   # Deploy reference application
-  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/generic-cicd-template.json -n development
+  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/generic-cicd-template.json -n openshift
+  oc new-app generic-app-template -n development
 
   do_add_webhook
 }
@@ -363,16 +364,16 @@ function do_add_webhook() {
     cp ./jq /usr/bin
   fi
 
-  WEBHOOK_URL=$(oc describe bc cicdpipeline -n cicd | grep URL | grep generic | cut -d':' -f2-4)
+  WEBHOOK_URL=$(oc describe bc cicdpipeline -n $PROJECT_NAME | grep URL | grep generic | cut -d':' -f2-4)
 
   PRIVATE_TOKEN=$(curl http://gitlab.cloudapps.example.com/api/v3/session --data "login=$(echo "$USER_USERNAME")&password=$(echo "$USER_PASSWORD")" | python -c "import sys, json; print json.load(sys.stdin)['private_token']")
 
   PROJECT_ID=$(curl --header "PRIVATE-TOKEN: $(echo "$PRIVATE_TOKEN")" \
-  http://$(echo "$GITLAB_APPLICATION_HOSTNAME")/api/v3/projects?search=bgdemo | jq '.[0].id')
+  http://$(echo "$GITLAB_APPLICATION_HOSTNAME")/api/v3/projects?search=$(echo "$REFERENCE_APPLICATION_NAME") | jq '.[0].id')
 
-  curl http://$(echo "$GITLAB_APPLICATION_HOSTNAME")/api/v3/projects/3/hooks \
+  curl http://$(echo "$GITLAB_APPLICATION_HOSTNAME")/api/v3/projects/$(echo "$PROJECT_ID")/hooks \
   --header "PRIVATE-TOKEN: $(echo "$PRIVATE_TOKEN")" \
-  --data "id=$(echo "$PROJECT_ID")&url=$(echo "$WEBHOOK_URL")&push_events=true&enable_ssl_verification=false"
+  --data "url=$(echo "$WEBHOOK_URL")&push_events=true&enable_ssl_verification=false"
 }
 
 # Test if oc CLI is available
