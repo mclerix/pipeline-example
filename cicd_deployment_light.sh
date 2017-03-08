@@ -182,19 +182,19 @@ function do_populate_gitlab() {
 
 function do_deploy_pipeline() {
   # Create the pipeline
-  oc create -f $PIPELINE_URL -n cicd
+  oc create -f $PIPELINE_URL -n $PROJECT_NAME
 
   # Instantiate the environments
   #  --> Project development
   oc new-project development
-  oadm policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n development
+  oadm policy add-role-to-user edit system:serviceaccount:$PROJECT_NAME:jenkins -n development
   #  --> Project test
   oc new-project test
-  oadm policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n test
+  oadm policy add-role-to-user edit system:serviceaccount:$PROJECT_NAME:jenkins -n test
   oadm policy add-role-to-group system:image-puller system:serviceaccounts:test -n development
   #  --> Project production
   oc new-project production
-  oadm policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n production
+  oadm policy add-role-to-user edit system:serviceaccount:$PROJECT_NAME:jenkins -n production
   oadm policy add-role-to-group system:image-puller system:serviceaccounts:production -n development
 
   # Deploy the test and production objects

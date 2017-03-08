@@ -22,17 +22,17 @@ PROJECT_DISPLAY_NAME="CI/CD Environment"
 PROJECT_DESCRIPTION="CI/CD Environment using Jenkins, Gitlab and Nexus"
 #TECHNOLOGY=""
 #METHODOLOGY=""
+SUB_DOMAIN="cloudapps.example.com"
 # CI/CD deployment related
-GITLAB_APPLICATION_HOSTNAME="gitlab.cloudapps.example.com"
+GITLAB_APPLICATION_HOSTNAME="gitlab.$SUB_DOMAIN"
 GITLAB_ROOT_PASSWORD="gitlab123"
-NEXUS_APPLICATION_HOSTNAME="nexus.cloudapps.example.com"
+NEXUS_APPLICATION_HOSTNAME="nexus.$SUB_DOMAIN"
 NEXUS_VOLUME_SIZE="5Gi"
+PIPELINE_URL="https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/pipeline-definition.yml"
 # Checking deployment configuration
 DEPLOYMENT_CHECK_INTERVAL=10 # Time in seconds between each check
 DEPLOYMENT_CHECK_TIMES=60 # Total number of check
 # Gitlab population related
-ROOT_PRIVATE_TOKEN=
-PRIVATE_TOKEN=
 REFERENCE_APPLICATION_NAME="bgdemo"
 REFERENCE_APPLICATION_IMPORT_URL="https://github.com/clerixmaxime/bgdemo"
 USER_NAME="demo_redhat"
@@ -206,7 +206,7 @@ EOF
     "accessModes": [ "ReadWriteOnce","ReadWriteMany" ],
     "nfs": {
         "path": "/exports/gitlab2",
-        "server": "'$NFS_SERVER_HOSTNAME'"
+        "server": "'$NFS_SERVER_HOSTNAME'"$PROJECT_NAME
     }
   }
   }' | oc create -f -
@@ -322,19 +322,19 @@ function do_populate_gitlab() {
 
 function do_deploy_pipeline() {
   # Create the pipeline
-  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/pipeline-definition.yml -n cicd
+  oc create -f $PIPELINE_URL -n $PROJECT_NAME
 
   # Instantiate the environments
   #  --> Project development
   oc new-project development
-  oadm policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n development
+  oadm policy add-role-to-user edit system:serviceaccount:$PROJECT_NAME:jenkins -n development
   #  --> Project test
   oc new-project test
-  oadm policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n test
+  oadm policy add-role-to-user edit system:serviceaccount:$PROJECT_NAME:jenkins -n test
   oadm policy add-role-to-group system:image-puller system:serviceaccounts:test -n development
   #  --> Project production
   oc new-project production
-  oadm policy add-role-to-user edit system:serviceaccount:cicd:jenkins -n production
+  oadm policy add-role-to-user edit system:serviceaccount:$PROJECT_NAME:jenkins -n production
   oadm policy add-role-to-group system:image-puller system:serviceaccounts:production -n development
 
   # Deploy the test and production objects
@@ -366,7 +366,7 @@ function do_add_webhook() {
 
   WEBHOOK_URL=$(oc describe bc cicdpipeline -n $PROJECT_NAME | grep URL | grep generic | cut -d':' -f2-4)
 
-  PRIVATE_TOKEN=$(curl http://gitlab.cloudapps.example.com/api/v3/session --data "login=$(echo "$USER_USERNAME")&password=$(echo "$USER_PASSWORD")" | python -c "import sys, json; print json.load(sys.stdin)['private_token']")
+  PRIVATE_TOKEN=$(curl http://$(echo "$GITLAB_APPLICATION_HOSTNAME")/api/v3/session --data "login=$(echo "$USER_USERNAME")&password=$(echo "$USER_PASSWORD")" | python -c "import sys, json; print json.load(sys.stdin)['private_token']")
 
   PROJECT_ID=$(curl --header "PRIVATE-TOKEN: $(echo "$PRIVATE_TOKEN")" \
   http://$(echo "$GITLAB_APPLICATION_HOSTNAME")/api/v3/projects?search=$(echo "$REFERENCE_APPLICATION_NAME") | jq '.[0].id')
