@@ -21,6 +21,7 @@ PROJECT_DISPLAY_NAME="CI/CD Environment"
 PROJECT_DESCRIPTION="CI/CD Environment using Jenkins, Gitlab and Nexus"
 #TECHNOLOGY=""
 #METHODOLOGY=""
+# Change this parameter according to the subdomain configured in your OpenShift Cluster
 SUB_DOMAIN="cloudapps.example.com"
 # CI/CD deployment related
 GITLAB_APPLICATION_HOSTNAME="gitlab.$SUB_DOMAIN"
@@ -121,7 +122,7 @@ function do_jenkins() {
 }
 
 function do_nexus() {
-  echo "--> Dowloading Gitlab template"
+  echo "--> Dowloading Nexus template"
   wget https://raw.githubusercontent.com/clerixmaxime/nexus-ose/master/nexus/ose3/nexus3-resources.json -O /etc/origin/examples/nexus3-resources.json
   echo "--> Replacing ci namespace with PROJECT namespace within nexus template"
   sed -i "s/ci/$PROJECT_NAME/g" /etc/origin/examples/nexus3-resources.json
