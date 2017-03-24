@@ -8,6 +8,10 @@ metadata:
     tags: "sonarqube,instant-app,cicd"
 objects:
 - apiVersion: v1
+  kind: serviceaccount
+  metadata:
+    name: sonarqube
+- apiVersion: v1
   kind: PersistentVolumeClaim
   metadata:
     name: sonarqube-claim
@@ -68,6 +72,7 @@ objects:
         restartPolicy: Always
         securityContext: {}
         terminationGracePeriodSeconds: 30
+        serviceAccount: sonarqube
         volumes:
         - name: mysql
           persistentVolumeClaim:
@@ -147,6 +152,7 @@ objects:
         restartPolicy: Always
         securityContext: {}
         terminationGracePeriodSeconds: 30
+        serviceAccount: sonarqube
         volumes:
         - emptyDir: {}
           name: sonarqube-data
@@ -183,7 +189,7 @@ objects:
     labels:
       app: ${SONARQUBE_NAME}
   spec:
-    host: $APPLICATION_HOSTNAME
+    host: ${APPLICATION_HOSTNAME}
     to:
       kind: Service
       name: ${SONARQUBE_NAME}
