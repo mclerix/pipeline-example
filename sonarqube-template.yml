@@ -8,7 +8,7 @@ metadata:
     tags: "sonarqube,instant-app,cicd"
 objects:
 - apiVersion: v1
-  kind: serviceaccount
+  kind: ServiceAccount
   metadata:
     name: sonarqube
 - apiVersion: v1
