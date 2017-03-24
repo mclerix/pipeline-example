@@ -183,7 +183,7 @@ objects:
     labels:
       app: ${SONARQUBE_NAME}
   spec:
-    host: APPLICATION_HOSTNAME
+    host: $APPLICATION_HOSTNAME
     to:
       kind: Service
       name: ${SONARQUBE_NAME}
