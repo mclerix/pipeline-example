@@ -20,19 +20,19 @@ NFS_SERVER_HOSTNAME="rhel-openshift.example.com"
 PROJECT_NAME="cicd"
 PROJECT_DISPLAY_NAME="CI/CD Environment"
 PROJECT_DESCRIPTION="CI/CD Environment using Jenkins, Gitlab and Nexus"
+SUB_DOMAIN="cloudapps.example.com"
 #TECHNOLOGY=""
 #METHODOLOGY=""
-SUB_DOMAIN="cloudapps.example.com"
 # CI/CD deployment related
 GITLAB_APPLICATION_HOSTNAME="gitlab.$SUB_DOMAIN"
 GITLAB_ROOT_PASSWORD="gitlab123"
 NEXUS_APPLICATION_HOSTNAME="nexus.$SUB_DOMAIN"
 NEXUS_VOLUME_SIZE="5Gi"
-PIPELINE_URL="https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/pipeline-definition.yml"
 # Checking deployment configuration
 DEPLOYMENT_CHECK_INTERVAL=10 # Time in seconds between each check
 DEPLOYMENT_CHECK_TIMES=60 # Total number of check
 # Gitlab population related
+PIPELINE_URL="https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/pipeline-definition.yml"
 REFERENCE_APPLICATION_NAME="bgdemo"
 REFERENCE_APPLICATION_IMPORT_URL="https://github.com/clerixmaxime/bgdemo"
 USER_NAME="demo_redhat"
@@ -206,7 +206,7 @@ EOF
     "accessModes": [ "ReadWriteOnce","ReadWriteMany" ],
     "nfs": {
         "path": "/exports/gitlab2",
-        "server": "'$NFS_SERVER_HOSTNAME'"$PROJECT_NAME
+        "server": "'$NFS_SERVER_HOSTNAME'"
     }
   }
   }' | oc create -f -
