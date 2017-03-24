@@ -4,9 +4,19 @@ metadata:
   creationTimestamp: null
   name: sonarqube
   annotations:
-    description: "SonarQube. Static code analysis"
+    description: "SonarQube Template. Static code analysis. Designed to be deployed with a persistent MySQL database."
     tags: "sonarqube,instant-app,cicd"
 objects:
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: sonarqube-claim
+  spec:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: "5Gi"
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
@@ -59,8 +69,9 @@ objects:
         securityContext: {}
         terminationGracePeriodSeconds: 30
         volumes:
-        - emptyDir: {}
-          name: mysql
+        - name: mysql
+          persistentVolumeClaim:
+            claimName: sonarqube-claim
   status: {}
 - apiVersion: v1
   kind: Service
@@ -172,7 +183,7 @@ objects:
     labels:
       app: ${SONARQUBE_NAME}
   spec:
-    host: ${SONARQUBE_NAME}.cloudapps.example.com
+    host: APPLICATION_HOSTNAME
     to:
       kind: Service
       name: ${SONARQUBE_NAME}
@@ -181,23 +192,27 @@ parameters:
   value: "sonarqube"
   name: SONARQUBE_NAME
   required: true
-- description: "TODO"
+- description: "Hostname og the application = Name of the project + Sub domain of the OCP cluster"
+  value: "sonarqube.cloudapps.example.com"
+  name: APPLICATION_HOSTNAME
+  required: true
+- description: "JDBC Url to access database for SonarQube"
   value: "jdbc:mysql://sonarqube-mysql/sonar?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true"
   name: SONARQUBE_JDBC_URL
   required: true
-- description: "TODO"
+- description: "MYSQL Database name for SonarQube. Default: sonar"
   value: "sonar"
   name: MYSQL_DATABASE
   required: false
-- description: "TODO"
+- description: "MYSQL Database password for SonarQube. Default: sonar"
   value: "sonar"
   name: MYSQL_PASSWORD
   required: true
-- description: "TODO"
+- description: "MYSQL Database root password for SonarQube. Default: sonar"
   value: "sonar"
   name: MYSQL_ROOT_PASSWORD
   required: true
-- description: "TODO"
+- description: "MYSQL Database user for SonarQube. Default: sonar"
   value: "sonar"
   name: MYSQL_USER
   required: true
