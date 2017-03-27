@@ -24,21 +24,26 @@ spec:
       jenkinsfile: >-
         node('maven') {
 
-        stage 'buildInDevelopment'
+        stage 'Development - Build'
 
         openshiftBuild(namespace: 'development', buildConfig: 'myapp',
         showBuildLogs: 'true')
 
-        stage 'deployInDevelopment'
+        stage 'Development - Static Code Analysis'
+
+        git branch: 'master', url:'https://github.com/clerixmaxime/bgdemo.git'
+        sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.2:sonar -Dsonar.host.url=http://sonarqube:9000'
+
+        stage 'Development - Deploy'
 
         openshiftDeploy(namespace: 'development', deploymentConfig: 'myapp')
 
         openshiftScale(namespace: 'development', deploymentConfig:
         'myapp',replicaCount: '1')
 
-        stage 'deployInTest'
+        stage 'Test - Deploy'
 
-        openshiftTag(namespace: 'development', sourceStream: 'myapp', 
+        openshiftTag(namespace: 'development', sourceStream: 'myapp',
         sourceTag: 'latest', destinationStream: 'myapp', destinationTag:
         'promoteToQA')
 
@@ -47,9 +52,9 @@ spec:
         openshiftScale(namespace: 'test', deploymentConfig:
         'myapp',replicaCount: '2')
 
-        stage 'deployInProduction'
+        stage 'Production - Deploy'
 
-        openshiftTag(namespace: 'development', sourceStream: 'myapp', 
+        openshiftTag(namespace: 'development', sourceStream: 'myapp',
         sourceTag: 'promoteToQA', destinationStream: 'myapp', destinationTag:
         'promoteToProd')
 
