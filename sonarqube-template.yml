@@ -57,13 +57,13 @@ objects:
             value: ${MYSQL_ROOT_PASSWORD}
           - name: MYSQL_USER
             value: ${MYSQL_USER}
-          image: mysql:5.7
+          image: registry.access.redhat.com/rhscl/mysql-56-rhel7
           imagePullPolicy: Always
           name: ${SONARQUBE_NAME}-mysql
           resources: {}
           terminationMessagePath: /dev/termination-log
           volumeMounts:
-          - mountPath: /var/lib/mysql
+          - mountPath: /var/lib/mysql/data
             name: mysql
         ports:
           - name: mysql
@@ -203,7 +203,7 @@ parameters:
   name: APPLICATION_HOSTNAME
   required: true
 - description: "JDBC Url to access database for SonarQube"
-  value: "jdbc:mysql://sonarqube-mysql/sonar?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true"
+  value: "jdbc:mysql://sonarqube-mysql:3306/sonar?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true"
   name: SONARQUBE_JDBC_URL
   required: true
 - description: "MYSQL Database name for SonarQube. Default: sonar"
