@@ -22,8 +22,8 @@ PROJECT_DISPLAY_NAME="CI/CD Environment"
 PROJECT_DESCRIPTION="CI/CD Environment using Jenkins, Gitlab and Nexus"
 SUB_DOMAIN="cloudapps.example.com"
 #TECHNOLOGY=""
-#METHODOLOGY=""
 # CI/CD deployment related
+#METHODOLOGY=""
 GITLAB_APPLICATION_HOSTNAME="gitlab.$SUB_DOMAIN"
 GITLAB_ROOT_PASSWORD="gitlab123"
 NEXUS_APPLICATION_HOSTNAME="nexus.$SUB_DOMAIN"
@@ -33,13 +33,13 @@ SONARQUBE_APPLICATION_HOSTNAME="sonarqube.$SUB_DOMAIN"
 DEPLOYMENT_CHECK_INTERVAL=10 # Time in seconds between each check
 DEPLOYMENT_CHECK_TIMES=60 # Total number of check
 # Gitlab population related
-PIPELINE_URL="https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/pipeline-definition.yml"
-REFERENCE_APPLICATION_NAME="bgdemo"
-REFERENCE_APPLICATION_IMPORT_URL="https://github.com/clerixmaxime/bgdemo"
-USER_NAME="demo_redhat"
-USER_USERNAME="demo_redhat"
-USER_MAIL="demo@redhat.com"
-USER_PASSWORD="demo_redhat"
+PIPELINE_URL="https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/pipeline-definition.yml"
+REFERENCE_APPLICATION_NAME="angulartodo"
+REFERENCE_APPLICATION_IMPORT_URL="https://github.com/clerixmaxime/pipeline-example.git"
+USER_NAME="dev_redhat"
+USER_USERNAME="dev_redhat"
+USER_MAIL="dev@redhat.com"
+USER_PASSWORD="dev_redhat"
 
 ###################################
 function wait_for_application_deployment() {
@@ -313,7 +313,7 @@ function do_nexus() {
 function do_sonarqube() {
 
   echo "--> Dowloading SonarQube template"
-  wget https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/sonarqube-template.yml -O ./sonar-template.yml
+  wget https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/sonarqube-template.yml -O ./sonar-template.yml
   echo "--> Importing SonarQube template"
   oc create -f ./sonar-template.yml -n $PROJECT_NAME
   echo "--> SonarQube template imported"
@@ -376,26 +376,29 @@ function do_deploy_pipeline() {
   #  --> Project development
   oc new-project development
   oadm policy add-role-to-user edit system:serviceaccount:$PROJECT_NAME:jenkins -n development
+  oc new-app mongodb-ephemeral -p MONGODB_USER=mongo -p MONGODB_PASSWORD=mongo -p MONGODB_ADMIN_PASSWORD=mongo -p MONGODB_DATABASE=mongo -n development
   #  --> Project test
   oc new-project test
   oadm policy add-role-to-user edit system:serviceaccount:$PROJECT_NAME:jenkins -n test
   oadm policy add-role-to-group system:image-puller system:serviceaccounts:test -n development
+  oc new-app mongodb-ephemeral -p MONGODB_USER=mongo -p MONGODB_PASSWORD=mongo -p MONGODB_ADMIN_PASSWORD=mongo -p MONGODB_DATABASE=mongo -n test
   #  --> Project production
   oc new-project production
   oadm policy add-role-to-user edit system:serviceaccount:$PROJECT_NAME:jenkins -n production
   oadm policy add-role-to-group system:image-puller system:serviceaccounts:production -n development
+  oc new-app mongodb-ephemeral -p MONGODB_USER=mongo -p MONGODB_PASSWORD=mongo -p MONGODB_ADMIN_PASSWORD=mongo -p MONGODB_DATABASE=mongo -n production
 
   # Deploy the test and production objects
-  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/testing/testing-dc.yml -n test
-  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/testing/testing-svc.yml -n test
-  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/testing/testing-route.yml -n test
-  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/production/production-dc.yml -n production
-  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/production/production-svc.yml -n production
-  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/production/production-route.yml -n production
+  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/testing/testing-dc.yml -n test
+  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/testing/testing-svc.yml -n test
+  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/testing/testing-route.yml -n test
+  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/production/production-dc.yml -n production
+  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/production/production-svc.yml -n production
+  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/production/production-route.yml -n production
 
   # Deploy reference application
-  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/generic-cicd-template.json -n openshift
-  oc new-app generic-app-template -n development
+  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/generic-cicd-template.json -n openshift
+  oc new-app generic-app-template -p APP_SOURCE_URL=http://gitlab.cloudapps.example.com/demo_redhat/$REFERENCE_APPLICATION_NAME.git -n development
 
   do_add_webhook
 }

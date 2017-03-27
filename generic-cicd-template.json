@@ -245,7 +245,7 @@
     },
     {
       "name": "DOCKER_REGISTRY_IP",
-      "description": "database username",
+      "description": "Docker registry IP Adress",
       "value": "172.30.253.239:5000",
       "required": true
     },
