@@ -35,7 +35,7 @@ DEPLOYMENT_CHECK_TIMES=60 # Total number of check
 # Gitlab population related
 PIPELINE_URL="https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/pipeline-definition.yml"
 REFERENCE_APPLICATION_NAME="angulartodo"
-REFERENCE_APPLICATION_IMPORT_URL="https://github.com/clerixmaxime/pipeline-example.git"
+REFERENCE_APPLICATION_IMPORT_URL="https://github.com/clerixmaxime/node-todo.git"
 USER_NAME="dev_redhat"
 USER_USERNAME="dev_redhat"
 USER_MAIL="dev@redhat.com"
@@ -398,7 +398,7 @@ function do_deploy_pipeline() {
 
   # Deploy reference application
   oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/generic-cicd-template.json -n openshift
-  oc new-app generic-app-template -p APP_SOURCE_URL=http://gitlab.cloudapps.example.com/demo_redhat/$REFERENCE_APPLICATION_NAME.git -n development
+  oc new-app generic-app-template -p APP_SOURCE_URL=http://gitlab.cloudapps.example.com/$USER_USERNAME/$REFERENCE_APPLICATION_NAME.git -n development
 
   do_add_webhook
 }

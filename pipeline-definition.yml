@@ -24,46 +24,66 @@ spec:
       jenkinsfile: >-
         node('maven') {
 
-        stage 'Development - Build'
+            stage 'Development - Build'
 
-        openshiftBuild(namespace: 'development', buildConfig: 'myapp',
-        showBuildLogs: 'true')
+            openshiftBuild(namespace: 'development', buildConfig: 'myapp',
+            showBuildLogs: 'true')
 
-        stage 'Development - Static Code Analysis'
 
-        git branch: 'master', url:'https://github.com/clerixmaxime/node-todo.git'
-        sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.2:sonar -Dsonar.host.url=http://sonarqube:9000'
+            stage 'Development - Deploy'
 
-        stage 'Development - Deploy'
+            openshiftDeploy(namespace: 'development', deploymentConfig: 'myapp')
 
-        openshiftDeploy(namespace: 'development', deploymentConfig: 'myapp')
+            openshiftScale(namespace: 'development', deploymentConfig:
+            'myapp',replicaCount: '1')
 
-        openshiftScale(namespace: 'development', deploymentConfig:
-        'myapp',replicaCount: '1')
 
-        stage 'Test - Deploy'
+            stage 'Development - Static Code Analysis'
 
-        openshiftTag(namespace: 'development', sourceStream: 'myapp',
-        sourceTag: 'latest', destinationStream: 'myapp', destinationTag:
-        'promoteToQA')
+            git branch: 'master', url:'https://github.com/clerixmaxime/node-todo.git'
 
-        openshiftDeploy(namespace: 'test', deploymentConfig: 'myapp')
+            sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.2:sonar -Dsonar.host.url=http://sonarqube:9000'
 
-        openshiftScale(namespace: 'test', deploymentConfig:
-        'myapp',replicaCount: '2')
+        }
 
-        stage 'Production - Deploy'
+        node('nodejs') {
 
-        openshiftTag(namespace: 'development', sourceStream: 'myapp',
-        sourceTag: 'promoteToQA', destinationStream: 'myapp', destinationTag:
-        'promoteToProd')
+            stage 'Development - Unit Testing'
 
-        input 'Do you want to deploy this application in production?'
+            git branch: 'master', url:'https://github.com/clerixmaxime/node-todo.git'
 
-        openshiftDeploy(namespace: 'production', deploymentConfig: 'myapp')
+            sh 'npm install -g jasmine'
 
-        openshiftScale(namespace: 'production', deploymentConfig:
-        'myapp',replicaCount: '2')
+            sh 'jasmine'
+
+
+            stage 'Test - Deploy'
+
+            openshiftTag(namespace: 'development', sourceStream: 'myapp',
+            sourceTag: 'latest', destinationStream: 'myapp', destinationTag:
+            'promoteToQA')
+
+            openshiftDeploy(namespace: 'test', deploymentConfig: 'myapp')
+
+            openshiftScale(namespace: 'test', deploymentConfig:
+            'myapp',replicaCount: '2')
+
+
+            stage 'Production - Wait for Approval'
+
+            openshiftTag(namespace: 'development', sourceStream: 'myapp',
+            sourceTag: 'promoteToQA', destinationStream: 'myapp', destinationTag:
+            'promoteToProd')
+
+            input 'Do you want to deploy this application in production?'
+
+
+            stage 'Production -Deploy'
+
+            openshiftDeploy(namespace: 'production', deploymentConfig: 'myapp')
+
+            openshiftScale(namespace: 'production', deploymentConfig:
+            'myapp',replicaCount: '2')
 
         }
   output: {}
