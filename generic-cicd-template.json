@@ -19,7 +19,7 @@
       },
       "spec": {
         "hard": {
-          "pods": "$QUOTA_NUMBER_OF_PODS"
+          "pods": 1
         },
         "scopes": [
           "NotTerminating"
@@ -274,12 +274,6 @@
       "name": "SOURCE_IMAGE",
       "description": "STI Image to use",
       "value": "nodejs:latest",
-      "required": true
-    },
-    {
-      "name": "QUOTA_NUMBER_OF_PODS",
-      "description": "Maximum number of pods in this project",
-      "value": "1",
       "required": true
     }
   ],
