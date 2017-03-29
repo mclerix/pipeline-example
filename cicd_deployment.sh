@@ -10,6 +10,8 @@
 #####################################################
 # Notes:
 
+# PREREQUISITES:
+# Create the following users on your Openshift Cluster: admin_cicd, dev_cicd, test_cicd & production_cicd
 # HOW TO RUN THE SCRIPT:
 # This script should be executed as root directly on the Openshift Master machine.
 # su - cicd_deployment.sh
@@ -337,7 +339,7 @@ function do_gitlab() {
   wget https://gitlab.com/gitlab-org/omnibus-gitlab/raw/master/docker/openshift-template.json -O /etc/origin/examples/gitlab-template.json
   # Import Gitlab Template
   echo "--> Importing Gitlab template"
-  oc create -f /etc/origin/examples/gitlab-template.json -n openshift
+  oc create -f /etc/origin/examples/gitlab-template.json -n $PROJECT_NAME
   echo "--> Gitlab template imported"
 
   # In order to run Gitlab, you should ensure that the gitlab-ce-user serviceaccount has the right authorizations.
@@ -392,13 +394,24 @@ function do_deploy_pipeline() {
   oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/testing/testing-dc.yml -n test
   oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/testing/testing-svc.yml -n test
   oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/testing/testing-route.yml -n test
+  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/testing/testing-quota.yml -n test
   oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/production/production-dc.yml -n production
   oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/production/production-svc.yml -n production
   oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/production/production-route.yml -n production
 
   # Deploy reference application
-  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/generic-cicd-template.json -n openshift
+  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/generic-cicd-template.json -n development
   oc new-app generic-app-template -p APP_SOURCE_URL=http://gitlab.cloudapps.example.com/$USER_USERNAME/$REFERENCE_APPLICATION_NAME.git -n development
+
+  # Set policyBindings for CICD users
+  oadm policy add-role-to-user admin admin_cicd -n cicd
+  oadm policy add-role-to-user admin admin_cicd -n development
+  oadm policy add-role-to-user admin admin_cicd -n test
+  oadm policy add-role-to-user admin admin_cicd -n production
+
+  oadm policy add-role-to-user admin dev_cicd -n development
+  oadm policy add-role-to-user admin test_cicd -n test
+  oadm policy add-role-to-user admin production_cicd -n production
 
   do_add_webhook
 }

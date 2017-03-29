@@ -12,21 +12,6 @@
   },
   "objects": [
     {
-      "kind": "ResourceQuota",
-      "apiVersion": "v1",
-      "metadata": {
-        "name": "pod-limitation"
-      },
-      "spec": {
-        "hard": {
-          "pods": 1
-        },
-        "scopes": [
-          "NotTerminating"
-        ]
-      }
-    },
-    {
       "kind": "Service",
       "apiVersion": "v1",
       "metadata": {

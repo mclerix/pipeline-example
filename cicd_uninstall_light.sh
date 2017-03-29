@@ -25,18 +25,7 @@
 ##############################################################
 
 oc delete project cicd development test production
-oc delete pv gitlab-volume gitlab1-volume gitlab2-volume gitlab3-volume jenkins-volume nexus3-pv sonarqube-pv
-
-rm -rf /exports/gitlab* /exports/jenkins /exports/nexus
-rm -f /etc/origin/example/gitlab-template.json /etc/origin/example/nexus3-resources.json
 
 oadm policy remove-scc-from-user anyuid gitlab-ce-user
 oadm policy remove-scc-from-user anyuid nexus
 oadm policy remove-scc-from-user anyuid sonarqube
-
-sed '/gitlab/d' /etc/exports.d/openshift-ansible.exports > /etc/exports.d/openshift-ansible.exports
-sed '/jenkins/d' /etc/exports.d/openshift-ansible.exports > /etc/exports.d/openshift-ansible.exports
-sed '/nexus/d' /etc/exports.d/openshift-ansible.exports > /etc/exports.d/openshift-ansible.exports
-sed '/sonar/d' /etc/exports.d/openshift-ansible.exports > /etc/exports.d/openshift-ansible.exports
-
-exportfs -r
