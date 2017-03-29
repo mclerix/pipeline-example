@@ -12,6 +12,21 @@
   },
   "objects": [
     {
+      "kind": "ResourceQuota",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "pod-limitation"
+      },
+      "spec": {
+        "hard": {
+          "pods": "$QUOTA_NUMBER_OF_PODS"
+        },
+        "scopes": [
+          "NotTerminating"
+        ]
+      }
+    },
+    {
       "kind": "Service",
       "apiVersion": "v1",
       "metadata": {
@@ -258,7 +273,13 @@
     {
       "name": "SOURCE_IMAGE",
       "description": "STI Image to use",
-      "value": "php:latest",
+      "value": "nodejs:latest",
+      "required": true
+    },
+    {
+      "name": "QUOTA_NUMBER_OF_PODS",
+      "description": "Maximum number of pods in this project",
+      "value": "1",
       "required": true
     }
   ],
