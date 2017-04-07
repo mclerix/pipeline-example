@@ -1,0 +1,97 @@
+apiVersion: v1
+kind: Template
+metadata:
+  creationTimestamp: null
+  name: cicd-env
+  annotations:
+    description: "Environment for CICD demonstration"
+    tags: "cicd,test,production,env"
+objects:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: myapp
+    namespace: ${NAMESPACE}
+  spec:
+    strategy:
+      type: Rolling
+      rollingParams:
+        updatePeriodSeconds: 1
+        intervalSeconds: 1
+        timeoutSeconds: 600
+        maxUnavailable: 25%
+        maxSurge: 25%
+      resources: {}
+    replicas: 2
+    test: false
+    selector:
+      deployment-config.name: myapp
+    template:
+      metadata:
+        labels:
+          deployment-config.name: myapp
+      spec:
+        containers:
+          - name: default-container
+            image: '${REGISTRY_IP}/development/myapp:promoteToQA'
+            resources: {}
+            terminationMessagePath: /dev/termination-log
+            imagePullPolicy: Always
+        restartPolicy: Always
+        terminationGracePeriodSeconds: 30
+        dnsPolicy: ClusterFirst
+        securityContext: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: myapp
+    namespace: ${NAMESPACE}
+  spec:
+    ports:
+      - protocol: TCP
+        port: 8080
+        targetPort: 8080
+    selector:
+      deployment-config.name: myapp
+    type: ClusterIP
+    sessionAffinity: None
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Route
+  metadata:
+    name: myapp
+    namespace: ${NAMESPACE}
+  spec:
+    host: myapp.${SUB_DOMAIN}
+    to:
+      kind: Service
+      name: myapp
+      weight: 100
+    port:
+      targetPort: 8080
+    wildcardPolicy: None
+- apiVersion: v1
+  kind: ResourceQuota
+  metadata:
+    name: pod-limitation
+  spec:
+    hard:
+      pods: ${POD_LIMITATION}
+    scopes:
+    - NotTerminating
+parameters:
+- description: "IP of the OpenShift Docker Registry"
+  name: REGISTRY_IP
+  required: true
+- description: "Project namespace in OpenShift"
+  name: NAMESPACE
+  required: true
+- description: "wildward domain of the OpenShift Cluster"
+  value: "cloudapps.example.com"
+  name: SUB_DOMAIN
+  required: true
+- description: "Maximum number of pods in this environment"
+  value: "4"
+  name: POD_LIMITATION
+  required: true
