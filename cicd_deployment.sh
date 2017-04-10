@@ -22,7 +22,7 @@ PROJECT_NAME="cicd"
 PROJECT_DISPLAY_NAME="CI/CD Environment"
 PROJECT_DESCRIPTION="CI/CD Environment using Jenkins, Gitlab and Nexus"
 # Cluster-related
-REGISTRY_IP="172.30.173.133"
+REGISTRY_IP="172.30.253.239:5000"
 NFS_SERVER_HOSTNAME="rhel-openshift.example.com"
 SUB_DOMAIN="cloudapps.example.com"
 # CICD stack definition
@@ -40,7 +40,7 @@ USER_MAIL="dev@redhat.com"
 USER_PASSWORD="dev_redhat"
 # Checking deployment configuration
 DEPLOYMENT_CHECK_INTERVAL=10 # Time in seconds between each check
-DEPLOYMENT_CHECK_TIMES=60 # Total number of check
+DEPLOYMENT_CHECK_TIMES=120 # Total number of check
 
 ###################################
 function wait_for_application_deployment() {
@@ -342,10 +342,10 @@ function do_gitlab() {
   echo "--> Starting Gitlab deployment"
   # Download Gitlab template for Openshift
   echo "--> Dowloading Gitlab template"
-  wget https://gitlab.com/gitlab-org/omnibus-gitlab/raw/master/docker/openshift-template.json -O /etc/origin/examples/gitlab-template.json
+  wget https://gitlab.com/gitlab-org/omnibus-gitlab/raw/master/docker/openshift-template.json -O ./gitlab-template.json
   # Import Gitlab Template
   echo "--> Importing Gitlab template"
-  oc create -f /etc/origin/examples/gitlab-template.json -n $PROJECT_NAME
+  oc create -f ./gitlab-template.json -n $PROJECT_NAME
   echo "--> Gitlab template imported"
 
   # In order to run Gitlab, you should ensure that the gitlab-ce-user serviceaccount has the right authorizations.
@@ -409,7 +409,7 @@ function do_deploy_pipeline() {
     -n test
 
   #  --> Project production
-  oc new-project production --display-name"CICD - Production"
+  oc new-project production --display-name="CICD - Production"
   oadm policy add-role-to-user edit system:serviceaccount:$PROJECT_NAME:jenkins -n production
   oadm policy add-role-to-group system:image-puller system:serviceaccounts:production -n development
   #  Create database for production environment
@@ -425,19 +425,21 @@ function do_deploy_pipeline() {
     -p REGISTRY_IP=$REGISTRY_IP \
     -p NAMESPACE="test" \
     -p SUB_DOMAIN=$SUB_DOMAIN \
-    -p POD_LIMITATION="4"
+    -p POD_LIMITATION="4" \
     -n test
 
   oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/env-template.yml \
     -p REGISTRY_IP=$REGISTRY_IP \
     -p NAMESPACE="production" \
     -p SUB_DOMAIN=$SUB_DOMAIN \
-    -p POD_LIMITATION="20"
+    -p POD_LIMITATION="20" \
     -n production
 
   # Deploy reference application
   oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/generic-cicd-template.json \
     -p APP_SOURCE_URL=http://gitlab.cloudapps.example.com/$USER_USERNAME/$REFERENCE_APPLICATION_NAME.git \
+    -p DOCKER_REGISTRY_IP=$REGISTRY_IP \
+    -p SUB_DOMAIN=$SUB_DOMAIN \
     -n development
 
   # Set policyBindings for CICD users
