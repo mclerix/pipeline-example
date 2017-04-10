@@ -64,7 +64,7 @@ objects:
     name: myapp
     namespace: ${NAMESPACE}
   spec:
-    host: myapp.${SUB_DOMAIN}
+    host: ${HOSTNAME}
     to:
       kind: Service
       name: myapp
@@ -88,11 +88,11 @@ parameters:
 - description: "Project namespace in OpenShift"
   name: NAMESPACE
   required: true
-- description: "wildward domain of the OpenShift Cluster"
-  value: "cloudapps.example.com"
-  name: SUB_DOMAIN
-  required: true
 - description: "Maximum number of pods in this environment"
   value: "4"
   name: POD_LIMITATION
+  required: true
+- description: "Maximum number of pods in this environment"
+  value: "4"
+  name: HOSTNAME
   required: true
