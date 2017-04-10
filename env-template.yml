@@ -92,7 +92,7 @@ parameters:
   value: "4"
   name: POD_LIMITATION
   required: true
-- description: "Maximum number of pods in this environment"
+- description: "Hostname of the application"
   value: "4"
   name: HOSTNAME
   required: true

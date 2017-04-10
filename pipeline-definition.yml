@@ -40,7 +40,7 @@ spec:
 
             stage 'Development - Static Code Analysis'
 
-            git branch: 'master', url:'https://github.com/clerixmaxime/node-todo.git'
+            git branch: 'master', url:'http://gitlab.cloudapps.example.com/dev_redhat/angulartodo.git'
 
             sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.2:sonar -Dsonar.host.url=http://sonarqube:9000'
 
@@ -50,7 +50,7 @@ spec:
 
             stage 'Development - Unit Testing'
 
-            git branch: 'master', url:'https://github.com/clerixmaxime/node-todo.git'
+            git branch: 'master', url:'http://gitlab.cloudapps.example.com/dev_redhat/angulartodo.git'
 
             sh 'npm install -g jasmine'
 

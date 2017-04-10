@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: ResourceQuota
-metadata:
-  name: pod-limitation
-spec:
-  hard:
-    pods: "4"
-  scopes:
-  - NotTerminating

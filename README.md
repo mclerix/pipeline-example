@@ -10,7 +10,7 @@ Demonstrate CICD pipeline in Openshift. This demonstration includes the followin
 * Pipeline Webhook
 * Authorizations
 * Resources Quotas
-* Autoscaling
+* Autoscaling (Under construction)
 
 # CI/CD Stack
 The CI/CD tools used in this demonstration are:
@@ -48,18 +48,15 @@ The images below are used in this demonstration. In order to speed up the deploy
 1. Connect to your Openshift Master as system:admin. <br>
 ``oc login -u system:admin``
 2. Clone this repository <br>
-``git clone https://github.com/clerixmaxime/pipeline-example.git``
-3. Execute cicd_deployment_light.sh. The script will deploy the whole CI/CD stack, configure the environments, populate Gitlab and create the pipeline. <br>
-``bash cicd_deployment_light.sh`` ou ``./cicd_deployment_light.sh``
-4. The demonstration should be up with the whole CI/CD stack running in the project cicd and 3 environments development, test and production created.
+```bash
+git clone https://github.com/clerixmaxime/pipeline-example.git
+cd ./pipeline-example
+git branch angular-todo
+```
+3. **/!\ Currently, the definition of the pipeline does not use variable. You should verify that the application sub_domain of your Openshift match the one defined in the jenkins file for Gitlab URL line 43 and 53 in pipeline-definition.yml. If it is not the case, make a copy of this file, put it online on your own git (fork this repository) and modify the value to match your Openshift configuration. In cicd_deployment.sh or cicd_deployment_light.sh mofidy the line 33 to add the right PIPELINE_URL.**
+4. Execute cicd_deployment_light.sh. The script will deploy the whole CI/CD stack, configure the environments, populate Gitlab and create the pipeline. <br>
+``bash cicd_deployment_light.sh`` ou ``./cicd_deployment_light.sh`` <br>
+5. The demonstration should be up with the whole CI/CD stack running in the project cicd and 3 environments development, test and production created.
 
 # What to demonstrate?
-## Jenkins pipeline
-
-## Webhook
-
-## Quotas
-
-## Authorizations
-
-## Autoscaling
+refers to `STORY.md` file

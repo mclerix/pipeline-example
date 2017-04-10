@@ -394,6 +394,7 @@ function do_deploy_pipeline() {
     -p MONGODB_PASSWORD=mongo \
     -p MONGODB_ADMIN_PASSWORD=mongo \
     -p MONGODB_DATABASE=mongo \
+    -p DATABASE_SERVICE_NAME=mongo-todo \
     -n development
 
   #  --> Project test
@@ -406,6 +407,7 @@ function do_deploy_pipeline() {
     -p MONGODB_PASSWORD=mongo \
     -p MONGODB_ADMIN_PASSWORD=mongo \
     -p MONGODB_DATABASE=mongo \
+    -p DATABASE_SERVICE_NAME=mongo-todo \
     -n test
 
   #  --> Project production
@@ -418,20 +420,21 @@ function do_deploy_pipeline() {
     -p MONGODB_PASSWORD=mongo \
     -p MONGODB_ADMIN_PASSWORD=mongo \
     -p MONGODB_DATABASE=mongo \
+    -p DATABASE_SERVICE_NAME=mongo-todo \
     -n production
 
   # Deploy the test and production objects
   oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/env-template.yml \
     -p REGISTRY_IP=$REGISTRY_IP \
     -p NAMESPACE="test" \
-    -p SUB_DOMAIN=$SUB_DOMAIN \
+    -p HOSTNAME=myapp-test.$SUB_DOMAIN \
     -p POD_LIMITATION="4" \
     -n test
 
   oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/env-template.yml \
     -p REGISTRY_IP=$REGISTRY_IP \
     -p NAMESPACE="production" \
-    -p SUB_DOMAIN=$SUB_DOMAIN \
+    -p HOSTNAME=myapp.$SUB_DOMAIN \
     -p POD_LIMITATION="20" \
     -n production
 

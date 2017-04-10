@@ -7,28 +7,21 @@
 # Made by: Maxime CLERIX
 # Date: 27/02/17
 #
-#####################################################
-# Notes:
-
-# DEPENDENCIES:
-
-# TO FIX:
-#
-
-# TO ENHANCE
-#
-
-# HOW TO RUN THE SCRIPT:
-# This script should be executed as root directly on the Openshift Master machine.
-# su - cicd_uninstall.sh
-
+##############################################################
+REGISTRY_IP=172.30.253.239:5000
 ##############################################################
 
+oc delete is gitlab-ce gitlab-ce-redis nexus3 sonatype-nexus3 -n cicd
+oc delete is myapp -n development
+docker rmi -f $REGISTRY_IP/cicd/nexus3:latest \
+              $REGISTRY_IP/development/myapp:latest \
+              $REGISTRY_IP/development/myapp:promoteToQA \
+              $REGISTRY_IP/development/myapp:promoteToProd
 oc delete project cicd development test production
 oc delete pv gitlab-volume gitlab1-volume gitlab2-volume gitlab3-volume jenkins-volume nexus3-pv sonarqube-pv
 
-rm -rf /exports/gitlab* /exports/jenkins /exports/nexus
-rm -f /etc/origin/example/gitlab-template.json /etc/origin/example/nexus3-resources.json
+rm -rf /exports/gitlab* /exports/jenkins /exports/nexus /exports/sonar_mysql
+rm -f ./gitlab-template.json ./nexus3-resources.json ./sonar-template.json
 
 oadm policy remove-scc-from-user anyuid gitlab-ce-user
 oadm policy remove-scc-from-user anyuid nexus

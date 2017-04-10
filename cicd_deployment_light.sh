@@ -10,35 +10,36 @@
 #####################################################
 # Notes:
 
+# PREREQUISITES:
+# Create the following users on your Openshift Cluster: admin_cicd, dev_cicd, test_cicd & production_cicd
 # HOW TO RUN THE SCRIPT:
 # This script should be executed as root directly on the Openshift Master machine.
 # su - cicd_deployment_light.sh
 
 ############ VARIABLES ############
-
+# CICD project definition
 PROJECT_NAME="cicd"
 PROJECT_DISPLAY_NAME="CI/CD Environment"
 PROJECT_DESCRIPTION="CI/CD Environment using Jenkins, Gitlab and Nexus"
-#TECHNOLOGY=""
-#METHODOLOGY=""
-# Change this parameter according to the subdomain configured in your OpenShift Cluster
+# Cluster-related
+REGISTRY_IP="172.30.253.239:5000"
 SUB_DOMAIN="cloudapps.example.com"
-# CI/CD deployment related
+# CICD stack definition
 GITLAB_APPLICATION_HOSTNAME="gitlab.$SUB_DOMAIN"
 GITLAB_ROOT_PASSWORD="gitlab123"
 NEXUS_APPLICATION_HOSTNAME="nexus.$SUB_DOMAIN"
 NEXUS_VOLUME_SIZE="5Gi"
-PIPELINE_URL="https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/pipeline-definition.yml"
+SONARQUBE_APPLICATION_HOSTNAME="sonarqube.$SUB_DOMAIN"
+PIPELINE_URL="https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/pipeline-definition.yml"
+REFERENCE_APPLICATION_NAME="angulartodo"
+REFERENCE_APPLICATION_IMPORT_URL="https://github.com/clerixmaxime/node-todo.git"
+USER_NAME="dev_redhat"
+USER_USERNAME="dev_redhat"
+USER_MAIL="dev@redhat.com"
+USER_PASSWORD="dev_redhat"
 # Checking deployment configuration
 DEPLOYMENT_CHECK_INTERVAL=10 # Time in seconds between each check
-DEPLOYMENT_CHECK_TIMES=60 # Total number of check
-# Gitlab population related
-REFERENCE_APPLICATION_NAME="bgdemo"
-REFERENCE_APPLICATION_IMPORT_URL="https://github.com/clerixmaxime/bgdemo"
-USER_NAME="demo_redhat"
-USER_USERNAME="demo_redhat"
-USER_MAIL="demo@redhat.com"
-USER_PASSWORD="demo_redhat"
+DEPLOYMENT_CHECK_TIMES=120 # Total number of check
 
 ###################################
 function wait_for_application_deployment() {
@@ -104,41 +105,72 @@ function wait_for_application_deployment() {
 }
 
 function do_OCP_setup () {
+
   oc login -u system:admin
-  oc new-project $PROJECT_NAME --display-name="$PROJECT_DISPLAY_NAME" --description="$PROJECT_DESCRIPTION"
+
+  oc new-project $PROJECT_NAME \
+    --display-name="$PROJECT_DISPLAY_NAME" \
+    --description="$PROJECT_DESCRIPTION"
+
   echo
   echo "$PROJECT_NAME Project created."
   echo
+
+  echo "SETUP rights for the project: $PROJECT_NAME"
+  oadm policy add-scc-to-group anyuid system:serviceaccounts:$PROJECT_NAME
 
   do_jenkins
 }
 
 function do_jenkins() {
-  # Deploy Jenkins using jenkins-persistent template
+
   oc new-app jenkins-persistent -n $PROJECT_NAME
-  echo "--> Deploying Jenkins in Openshift project: $PROJECT_NAME"
+  echo "--> Deploying Jenkins on Openshift $PROJECT_NAME"
 
   do_nexus
 }
 
 function do_nexus() {
-  echo "--> Dowloading Nexus template"
-  wget https://raw.githubusercontent.com/clerixmaxime/nexus-ose/master/nexus/ose3/nexus3-resources.json -O /etc/origin/examples/nexus3-resources.json
+  echo "--> Dowloading Gitlab template"
+  wget https://raw.githubusercontent.com/clerixmaxime/nexus-ose/master/nexus/ose3/nexus3-resources.json -O ./nexus3-resources.json
   echo "--> Replacing ci namespace with PROJECT namespace within nexus template"
-  sed -i "s/ci/$PROJECT_NAME/g" /etc/origin/examples/nexus3-resources.json
+  sed -i "s/ci/$PROJECT_NAME/g" ./nexus3-resources.json
   echo "--> Importing Nexus template"
-  oc create -f /etc/origin/examples/nexus3-resources.json -n $PROJECT_NAME
+  oc create -f ./nexus3-resources.json -n $PROJECT_NAME
   echo "--> Nexus template imported"
 
   echo "--> Updating nexus serviceaccount authrizations"
   oadm policy add-scc-to-user anyuid -z nexus -n $PROJECT_NAME
   echo "--> nexus serviceaccount authrizations updated"
 
-  oc new-app nexus3-persistent -p APPLICATION_HOSTNAME=$NEXUS_APPLICATION_HOSTNAME -p SIZE=$NEXUS_VOLUME_SIZE -n $PROJECT_NAME
+  oc new-app nexus3-persistent \
+    -p APPLICATION_HOSTNAME=$NEXUS_APPLICATION_HOSTNAME \
+    -p SIZE=$NEXUS_VOLUME_SIZE \
+    -n $PROJECT_NAME
   echo "--> Deploying Nexus on Openshift"
-  echo "#################################################"
-  echo "# Default credentials for Nexus: admin/admin123 #"
-  echo "#################################################"
+  echo "--> Default credentials for Nexus: admin/admin123"
+
+  do_sonarqube
+}
+
+function do_sonarqube() {
+
+  echo "--> Dowloading SonarQube template"
+  wget https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/sonarqube-template.yml -O ./sonar-template.yml
+  echo "--> Importing SonarQube template"
+  oc create -f ./sonar-template.yml -n $PROJECT_NAME
+  echo "--> SonarQube template imported"
+
+  echo "--> Updating SonarQube serviceaccount authrizations"
+  oadm policy add-scc-to-user anyuid -z sonarqube -n $PROJECT_NAME
+  echo "--> SonarQube serviceaccount authrizations updated"
+
+
+  oc new-app sonarqube \
+    -p APPLICATION_HOSTNAME=$SONARQUBE_APPLICATION_HOSTNAME \
+    -n $PROJECT_NAME
+  echo "--> Deploying SonarQube on Openshift"
+  echo "--> Default credentials for SonarQube: admin/admin"
 
   do_gitlab
 }
@@ -147,10 +179,10 @@ function do_gitlab() {
   echo "--> Starting Gitlab deployment"
   # Download Gitlab template for Openshift
   echo "--> Dowloading Gitlab template"
-  wget https://gitlab.com/gitlab-org/omnibus-gitlab/raw/master/docker/openshift-template.json -O /etc/origin/examples/gitlab-template.json
+  wget https://gitlab.com/gitlab-org/omnibus-gitlab/raw/master/docker/openshift-template.json -O ./gitlab-template.json
   # Import Gitlab Template
   echo "--> Importing Gitlab template"
-  oc create -f /etc/origin/examples/gitlab-template.json -n openshift
+  oc create -f ./gitlab-template.json -n $PROJECT_NAME
   echo "--> Gitlab template imported"
 
   # In order to run Gitlab, you should ensure that the gitlab-ce-user serviceaccount has the right authorizations.
@@ -160,7 +192,10 @@ function do_gitlab() {
   echo "--> gitlab-ce-user serviceaccount authrizations updated"
 
   # Deploy Gitlab
-  oc new-app gitlab-ce -n $PROJECT_NAME -p APPLICATION_HOSTNAME=$GITLAB_APPLICATION_HOSTNAME -p GITLAB_ROOT_PASSWORD=$GITLAB_ROOT_PASSWORD
+  oc new-app gitlab-ce \
+    -p APPLICATION_HOSTNAME=$GITLAB_APPLICATION_HOSTNAME \
+    -p GITLAB_ROOT_PASSWORD=$GITLAB_ROOT_PASSWORD \
+    -n $PROJECT_NAME
   echo "--> Deploying Gitlab on Openshift"
 
   wait_for_application_deployment "gitlab-ce"
@@ -182,33 +217,81 @@ function do_populate_gitlab() {
 }
 
 function do_deploy_pipeline() {
+
   # Create the pipeline
   oc create -f $PIPELINE_URL -n $PROJECT_NAME
 
   # Instantiate the environments
   #  --> Project development
-  oc new-project development
+  oc new-project development --display-name="CICD - Development"
   oadm policy add-role-to-user edit system:serviceaccount:$PROJECT_NAME:jenkins -n development
+  #  Create database for dev environment
+  oc new-app mongodb-ephemeral \
+    -p MONGODB_USER=mongo \
+    -p MONGODB_PASSWORD=mongo \
+    -p MONGODB_ADMIN_PASSWORD=mongo \
+    -p MONGODB_DATABASE=mongo \
+    -p DATABASE_SERVICE_NAME=mongo-todo \
+    -n development
+
   #  --> Project test
-  oc new-project test
+  oc new-project test --display-name="CICD - Test"
   oadm policy add-role-to-user edit system:serviceaccount:$PROJECT_NAME:jenkins -n test
   oadm policy add-role-to-group system:image-puller system:serviceaccounts:test -n development
+  #  Create database for test environment
+  oc new-app mongodb-ephemeral \
+    -p MONGODB_USER=mongo \
+    -p MONGODB_PASSWORD=mongo \
+    -p MONGODB_ADMIN_PASSWORD=mongo \
+    -p MONGODB_DATABASE=mongo \
+    -p DATABASE_SERVICE_NAME=mongo-todo \
+    -n test
+
   #  --> Project production
-  oc new-project production
+  oc new-project production --display-name="CICD - Production"
   oadm policy add-role-to-user edit system:serviceaccount:$PROJECT_NAME:jenkins -n production
   oadm policy add-role-to-group system:image-puller system:serviceaccounts:production -n development
+  #  Create database for production environment
+  oc new-app mongodb-ephemeral \
+    -p MONGODB_USER=mongo \
+    -p MONGODB_PASSWORD=mongo \
+    -p MONGODB_ADMIN_PASSWORD=mongo \
+    -p MONGODB_DATABASE=mongo \
+    -p DATABASE_SERVICE_NAME=mongo-todo \
+    -n production
 
   # Deploy the test and production objects
-  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/testing/testing-dc.yml -n test
-  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/testing/testing-svc.yml -n test
-  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/testing/testing-route.yml -n test
-  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/production/production-dc.yml -n production
-  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/production/production-svc.yml -n production
-  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/production/production-route.yml -n production
+  oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/env-template.yml \
+    -p REGISTRY_IP=$REGISTRY_IP \
+    -p NAMESPACE="test" \
+    -p HOSTNAME=myapp-test.$SUB_DOMAIN \
+    -p POD_LIMITATION="4" \
+    -n test
+
+  oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/env-template.yml \
+    -p REGISTRY_IP=$REGISTRY_IP \
+    -p NAMESPACE="production" \
+    -p HOSTNAME=myapp.$SUB_DOMAIN \
+    -p POD_LIMITATION="20" \
+    -n production
 
   # Deploy reference application
-  oc create -f https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/generic-cicd-template.json -n openshift
-  oc new-app generic-app-template -n development
+  oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/generic-cicd-template.json \
+    -p APP_SOURCE_URL=http://gitlab.cloudapps.example.com/$USER_USERNAME/$REFERENCE_APPLICATION_NAME.git \
+    -p DOCKER_REGISTRY_IP=$REGISTRY_IP \
+    -p SUB_DOMAIN=$SUB_DOMAIN \
+    -n development
+
+  # Set policyBindings for CICD users
+  # Admin right
+  oadm policy add-role-to-user admin admin_cicd -n cicd
+  oadm policy add-role-to-user admin admin_cicd -n development
+  oadm policy add-role-to-user admin admin_cicd -n test
+  oadm policy add-role-to-user admin admin_cicd -n production
+  # Environements' users rights
+  oadm policy add-role-to-user admin dev_cicd -n development
+  oadm policy add-role-to-user admin test_cicd -n test
+  oadm policy add-role-to-user admin production_cicd -n production
 
   do_add_webhook
 }
