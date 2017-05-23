@@ -6,19 +6,20 @@
 
 ## Use Case #1: Demonstrate a pipeline
 *Once the script is done and the CICD stack is deployed*
-4. Move to "CICD - Environment"
-5. Open Gitlab in a new tab, authenticate with credentials dev_redhat/dev_redhat and show that Gitlab has been populated with a project "angulartodo"
-5. Go back to OpenShift, navigate to "Builds > Pipelines" and launch the pipeline.
-6. Then click on "View Log" to see the pipeline execution. Once the pipeline is launched, explain that Jenkins dynamically deploys a slave in OpenShift to execute the job.
-6. During the application build, move to "CICD - Development" project and show the S2I process.
-7. Once built, show the application's deployment within "CICD - Development" project.
-8. Afterward, go back on the pipeline, and follow it's execution during tests.
+
+1. Move to "CICD - Environment"
+2. Open Gitlab in a new tab, authenticate with credentials dev_redhat/dev_redhat and show that Gitlab has been populated with a project "angulartodo"
+3. Go back to OpenShift, navigate to "Builds > Pipelines" and launch the pipeline.
+4. Then click on "View Log" to see the pipeline execution. Once the pipeline is launched, explain that Jenkins dynamically deploys a slave in OpenShift to execute the job.
+5. During the application build, move to "CICD - Development" project and show the S2I process.
+6. Once built, show the application's deployment within "CICD - Development" project.
+7. Afterward, go back on the pipeline, and follow it's execution during tests.
   * *(Optional)* During the pipeline, SonarQube runs a scan of the source code to produce a code quality report. If this report is complient with the quality gate, the pipeline executes the next steps, otherwise it fails. <br>
   Open SonarQube and log in (admin/admin). You will end up on the main page of SonarQube. Click on "explore projects", the todo application report will be displayed.
   * *(Optional)* In the Jenkins logs of the Pipeline, you can also see the unit tests executed by Jasmine.
-9. *(Optional)* Show Use case #5.
-12. On the pipeline screen, you should see the step "Production - Wait for Approval". Click
-13. Show that the application is up and running in production. Add some todos to the application. (While redeploying the application later, you should be able to show that the data are separated from the application and that you get the same todos even if you deploy a new version of the application).
+8. *(Optional)* Show Use case #5.
+9. On the pipeline screen, you should see the step "Production - Wait for Approval". Click
+10. Show that the application is up and running in production. Add some todos to the application. (While redeploying the application later, you should be able to show that the data are separated from the application and that you get the same todos even if you deploy a new version of the application).
 
 ## Use Case #2: Demonstrate triggers and webhooks
 Gitlab and Openshift Pipeline has been configured with webhooks. Each time that a commit is done on the git repository, it will trigger the pipeline in OpenShift.
