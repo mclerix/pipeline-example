@@ -12,16 +12,6 @@ objects:
   metadata:
     name: sonarqube
 - apiVersion: v1
-  kind: PersistentVolumeClaim
-  metadata:
-    name: sonarqube-claim
-  spec:
-    accessModes:
-      - ReadWriteOnce
-    resources:
-      requests:
-        storage: "5Gi"
-- apiVersion: v1
   kind: DeploymentConfig
   metadata:
     name: ${SONARQUBE_NAME}-mysql
@@ -75,8 +65,7 @@ objects:
         serviceAccount: sonarqube
         volumes:
         - name: mysql
-          persistentVolumeClaim:
-            claimName: sonarqube-claim
+          emptyDir: {}
   status: {}
 - apiVersion: v1
   kind: Service

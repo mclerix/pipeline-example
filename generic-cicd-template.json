@@ -68,18 +68,6 @@
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "origin-ruby-sample",
-        "creationTimestamp": null
-      },
-      "spec": {},
-      "status": {
-        "dockerImageRepository": ""
-      }
-    },
-    {
-      "kind": "ImageStream",
-      "apiVersion": "v1",
-      "metadata": {
         "name": "${APP_NAME}",
         "namespace": "${NAMESPACE}",
         "creationTimestamp": null,
@@ -245,7 +233,7 @@
     },
     {
       "name": "DOCKER_REGISTRY_IP",
-      "description": "database username",
+      "description": "Docker registry IP Adress",
       "value": "172.30.253.239:5000",
       "required": true
     },
@@ -258,7 +246,7 @@
     {
       "name": "SOURCE_IMAGE",
       "description": "STI Image to use",
-      "value": "php:latest",
+      "value": "nodejs:latest",
       "required": true
     }
   ],
