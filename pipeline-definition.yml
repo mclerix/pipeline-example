@@ -71,12 +71,11 @@ spec:
 
             stage 'Production - Wait for Approval'
 
+            input 'Do you want to deploy this application in production?'
+
             openshiftTag(namespace: 'development', sourceStream: 'myapp',
             sourceTag: 'promoteToQA', destinationStream: 'myapp', destinationTag:
             'promoteToProd')
-
-            input 'Do you want to deploy this application in production?'
-
 
             stage 'Production -Deploy'
 

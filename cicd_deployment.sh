@@ -2,7 +2,7 @@
 #####################################################
 #
 # Deployment of CI/CD tools in Openshift
-# Jenkins, Gitlab, Nexus
+# Jenkins, Gitlab, SonarQube
 #
 # Made by: Maxime CLERIX
 # Date: 27/02/17
@@ -20,7 +20,7 @@
 # CICD project definition
 PROJECT_NAME="cicd"
 PROJECT_DISPLAY_NAME="CI/CD Environment"
-PROJECT_DESCRIPTION="CI/CD Environment using Jenkins, Gitlab and Nexus"
+PROJECT_DESCRIPTION="CI/CD Environment using Jenkins, Gitlab and SonarQube"
 # Cluster-related
 REGISTRY_IP="172.30.253.239:5000"
 NFS_SERVER_HOSTNAME="rhel-openshift.example.com"
@@ -28,8 +28,6 @@ SUB_DOMAIN="cloudapps.example.com"
 # CICD stack definition
 GITLAB_APPLICATION_HOSTNAME="gitlab.$SUB_DOMAIN"
 GITLAB_ROOT_PASSWORD="gitlab123"
-NEXUS_APPLICATION_HOSTNAME="nexus.$SUB_DOMAIN"
-NEXUS_VOLUME_SIZE="5Gi"
 SONARQUBE_APPLICATION_HOSTNAME="sonarqube.$SUB_DOMAIN"
 PIPELINE_URL="https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/pipeline-definition.yml"
 REFERENCE_APPLICATION_NAME="angulartodo"
@@ -128,10 +126,10 @@ function do_persistent_volumes () {
   echo
   echo "--> Creating directories for persistent volumes on NFS Server"
   echo
-  mkdir -p /exports/jenkins /exports/gitlab /exports/gitlab1 /exports/gitlab2 /exports/gitlab3 /exports/nexus /exports/sonar_mysql
+  mkdir -p /exports/jenkins /exports/gitlab /exports/gitlab1 /exports/gitlab2 /exports/gitlab3 /exports/sonar_mysql
   # Set ownership of jenkins directory to nfsnobody user/group and set permissions
-  chown -R nfsnobody:nfsnobody /exports/jenkins/ /exports/gitlab /exports/gitlab1 /exports/gitlab2 /exports/gitlab3 /exports/nexus /exports/sonar_mysql
-  chmod -R 777 /exports/jenkins /exports/gitlab /exports/gitlab1 /exports/gitlab2 /exports/gitlab3 /exports/nexus /exports/sonar_mysql
+  chown -R nfsnobody:nfsnobody /exports/jenkins/ /exports/gitlab /exports/gitlab1 /exports/gitlab2 /exports/gitlab3 /exports/sonar_mysql
+  chmod -R 777 /exports/jenkins /exports/gitlab /exports/gitlab1 /exports/gitlab2 /exports/gitlab3 /exports/sonar_mysql
 
   cat <<- EOF >> /etc/exports.d/openshift-ansible.exports
   /exports/jenkins *(rw,root_squash)
@@ -139,7 +137,6 @@ function do_persistent_volumes () {
   /exports/gitlab1 *(rw,root_squash)
   /exports/gitlab2 *(rw,root_squash)
   /exports/gitlab3 *(rw,root_squash)
-  /exports/nexus *(rw,root_squash)
   /exports/sonar_mysql *(rw,root_squash)
 EOF
 
@@ -241,26 +238,6 @@ EOF
   echo
   echo "--> Persistent volumes for Gitlab created"
   echo
-  echo "--> Creating persistent volumes for Nexus"
-  echo
-  echo '{
-  "apiVersion": "v1",
-  "kind": "PersistentVolume",
-  "metadata": {
-    "name": "nexus3-pv"
-  },
-  "spec": {
-    "capacity": {
-        "storage": "5Gi"
-        },
-    "accessModes": [ "ReadWriteOnce","ReadWriteMany" ],
-    "nfs": {
-        "path": "/exports/nexus",
-        "server": "'$NFS_SERVER_HOSTNAME'"
-    }
-  }
-  }' | oc create -f -
-  echo "--> Persistent volumes for Nexus created"
   echo "--> Creating persistent volumes for SonarQube"
   echo
   echo '{
@@ -289,29 +266,6 @@ function do_jenkins() {
 
   oc new-app jenkins-persistent -n $PROJECT_NAME
   echo "--> Deploying Jenkins on Openshift $PROJECT_NAME"
-
-  do_nexus
-}
-
-function do_nexus() {
-  echo "--> Dowloading Gitlab template"
-  wget https://raw.githubusercontent.com/clerixmaxime/nexus-ose/master/nexus/ose3/nexus3-resources.json -O ./nexus3-resources.json
-  echo "--> Replacing ci namespace with PROJECT namespace within nexus template"
-  sed -i "s/ci/$PROJECT_NAME/g" ./nexus3-resources.json
-  echo "--> Importing Nexus template"
-  oc create -f ./nexus3-resources.json -n $PROJECT_NAME
-  echo "--> Nexus template imported"
-
-  echo "--> Updating nexus serviceaccount authrizations"
-  oadm policy add-scc-to-user anyuid -z nexus -n $PROJECT_NAME
-  echo "--> nexus serviceaccount authrizations updated"
-
-  oc new-app nexus3-persistent \
-    -p APPLICATION_HOSTNAME=$NEXUS_APPLICATION_HOSTNAME \
-    -p SIZE=$NEXUS_VOLUME_SIZE \
-    -n $PROJECT_NAME
-  echo "--> Deploying Nexus on Openshift"
-  echo "--> Default credentials for Nexus: admin/admin123"
 
   do_sonarqube
 }
@@ -342,7 +296,9 @@ function do_gitlab() {
   echo "--> Starting Gitlab deployment"
   # Download Gitlab template for Openshift
   echo "--> Dowloading Gitlab template"
-  wget https://gitlab.com/gitlab-org/omnibus-gitlab/raw/master/docker/openshift-template.json -O ./gitlab-template.json
+  # With latest template versions
+  # wget https://gitlab.com/gitlab-org/omnibus-gitlab/raw/master/docker/openshift-template.json -O ./gitlab-template.json
+  wget https://gitlab.com/gitlab-org/omnibus-gitlab/raw/c025ff897de5819b21f479dcee8d32e17295ddf4/docker/openshift-template.json -O ./gitlab-template.json
   # Import Gitlab Template
   echo "--> Importing Gitlab template"
   oc create -f ./gitlab-template.json -n $PROJECT_NAME
