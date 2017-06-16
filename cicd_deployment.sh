@@ -22,14 +22,13 @@ PROJECT_NAME="cicd"
 PROJECT_DISPLAY_NAME="CI/CD Environment"
 PROJECT_DESCRIPTION="CI/CD Environment using Jenkins, Gitlab and SonarQube"
 # Cluster-related
-REGISTRY_IP="172.30.253.239:5000"
 NFS_SERVER_HOSTNAME="rhel-openshift.example.com"
 SUB_DOMAIN="cloudapps.example.com"
 # CICD stack definition
 GITLAB_APPLICATION_HOSTNAME="gitlab.$SUB_DOMAIN"
 GITLAB_ROOT_PASSWORD="gitlab123"
 SONARQUBE_APPLICATION_HOSTNAME="sonarqube.$SUB_DOMAIN"
-PIPELINE_URL="https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/pipeline-definition.yml"
+PIPELINE_URL="https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/pipeline-definition.yml"
 REFERENCE_APPLICATION_NAME="angulartodo"
 REFERENCE_APPLICATION_IMPORT_URL="https://github.com/clerixmaxime/node-todo.git"
 USER_NAME="dev_redhat"
@@ -273,7 +272,7 @@ function do_jenkins() {
 function do_sonarqube() {
 
   echo "--> Dowloading SonarQube template"
-  wget https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/sonarqube-template.yml -O ./sonar-template.yml
+  wget https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/sonarqube-template.yml -O ./sonar-template.yml
   echo "--> Importing SonarQube template"
   oc create -f ./sonar-template.yml -n $PROJECT_NAME
   echo "--> SonarQube template imported"
@@ -380,22 +379,22 @@ function do_deploy_pipeline() {
     -n production
 
   # Deploy the test and production objects
-  oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/env-template.yml \
-    -p REGISTRY_IP=$REGISTRY_IP \
+  oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/env-template.yml \
     -p NAMESPACE="test" \
+    -p APP_IMAGE_TAG="promoteToQA" \
     -p HOSTNAME=myapp-test.$SUB_DOMAIN \
     -p POD_LIMITATION="4" \
     -n test
 
-  oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/env-template.yml \
-    -p REGISTRY_IP=$REGISTRY_IP \
+  oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/env-template.yml \
     -p NAMESPACE="production" \
+    -p APP_IMAGE_TAG="promoteToProd" \
     -p HOSTNAME=myapp.$SUB_DOMAIN \
     -p POD_LIMITATION="20" \
     -n production
 
   # Deploy reference application
-  oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/angular-todo/generic-cicd-template.json \
+  oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/generic-cicd-template.json \
     -p APP_SOURCE_URL=http://gitlab.cloudapps.example.com/$USER_USERNAME/$REFERENCE_APPLICATION_NAME.git \
     -p DOCKER_REGISTRY_IP=$REGISTRY_IP \
     -p SUB_DOMAIN=$SUB_DOMAIN \

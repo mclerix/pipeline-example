@@ -2,15 +2,15 @@ apiVersion: v1
 kind: Template
 metadata:
   creationTimestamp: null
-  name: cicd-env
+  name: cicd-generic-env
   annotations:
-    description: "Environment for CICD demonstration"
+    description: "Generic environment for CICD demonstration"
     tags: "cicd,test,production,env"
 objects:
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
-    name: myapp
+    name: ${APP_IMAGE_NAME}
     namespace: ${NAMESPACE}
   spec:
     strategy:
@@ -22,19 +22,28 @@ objects:
         maxUnavailable: 25%
         maxSurge: 25%
       resources: {}
-    triggers: []
+    triggers:
+      - type: ImageChange
+        imageChangeParams:
+          automatic: false
+          containerNames:
+            - ${APP_IMAGE_NAME}
+          from:
+            kind: ImageStreamTag
+            namespace: ${APP_IMAGE_NAMESPACE}
+            name: '${APP_IMAGE_NAME}:${APP_IMAGE_TAG}'
     replicas: 2
     test: false
     selector:
-      deployment-config.name: myapp
+      deployment-config.name: ${APP_IMAGE_NAME}
     template:
       metadata:
         labels:
-          deployment-config.name: myapp
+          deployment-config.name: ${APP_IMAGE_NAME}
       spec:
         containers:
-          - name: default-container
-            image: '${REGISTRY_IP}/development/myapp:promoteToQA'
+          - name: ${APP_IMAGE_NAME}
+            image: ""
             resources: {}
             terminationMessagePath: /dev/termination-log
             imagePullPolicy: Always
@@ -45,7 +54,7 @@ objects:
 - apiVersion: v1
   kind: Service
   metadata:
-    name: myapp
+    name: ${APP_IMAGE_NAME}
     namespace: ${NAMESPACE}
   spec:
     ports:
@@ -53,7 +62,7 @@ objects:
         port: 8080
         targetPort: 8080
     selector:
-      deployment-config.name: myapp
+      deployment-config.name: ${APP_IMAGE_NAME}
     type: ClusterIP
     sessionAffinity: None
   status:
@@ -61,13 +70,13 @@ objects:
 - apiVersion: v1
   kind: Route
   metadata:
-    name: myapp
+    name: ${APP_IMAGE_NAME}
     namespace: ${NAMESPACE}
   spec:
     host: ${HOSTNAME}
     to:
       kind: Service
-      name: myapp
+      name: ${APP_IMAGE_NAME}
       weight: 100
     port:
       targetPort: 8080
@@ -82,11 +91,19 @@ objects:
     scopes:
     - NotTerminating
 parameters:
-- description: "IP of the OpenShift Docker Registry"
-  name: REGISTRY_IP
-  required: true
 - description: "Project namespace in OpenShift"
   name: NAMESPACE
+  required: true
+- description: "Name of the app"
+  name: APP_IMAGE_NAME
+  value: "myapp"
+  required: true
+- description: "Project namespace where is located the image to use"
+  name: APP_IMAGE_NAMESPACE
+  value: "development"
+  required: true
+- description: "IP of the OpenShift Docker Registry"
+  name: APP_IMAGE_TAG
   required: true
 - description: "Maximum number of pods in this environment"
   value: "4"

@@ -1,0 +1,155 @@
+kind: Template
+apiVersion: v1
+metadata:
+  name: cicd-dev-env-template
+  creationTimestamp:
+  annotations:
+    description: Node Todo App build template
+    iconClass: icon-nodejs
+    tags: instant-app,nodejs,cicd
+objects:
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: "${APP_NAME}"
+    namespace: "${NAMESPACE}"
+    creationTimestamp:
+    labels:
+      app: "${APP_NAME}"
+  spec:
+    ports:
+    - name: 8080-tcp
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+    selector:
+      deploymentconfig: "${APP_NAME}"
+    type: ClusterIP
+    sessionAffinity: None
+  status:
+    loadBalancer: {}
+- kind: Route
+  apiVersion: v1
+  metadata:
+    name: "${APP_NAME}"
+    namespace: "${NAMESPACE}"
+    creationTimestamp:
+    labels:
+      app: "${APP_NAME}"
+  spec:
+    host: "${APP_NAME}-${NAMESPACE}.${SUB_DOMAIN}"
+    to:
+      kind: Service
+      name: "${APP_NAME}"
+    port:
+      targetPort: 8080
+  status: {}
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: "${APP_NAME}"
+    namespace: "${NAMESPACE}"
+    labels:
+      app: "${APP_NAME}"
+- kind: BuildConfig
+  apiVersion: v1
+  metadata:
+    name: "${APP_NAME}"
+    namespace: "${NAMESPACE}"
+    labels:
+      app: "${APP_NAME}"
+  spec:
+    triggers:
+    - type: Generic
+      generic:
+        secret: generic_secret102
+    runPolicy: Serial
+    source:
+      type: Git
+      git:
+        uri: "${APP_SOURCE_URL}"
+    strategy:
+      type: Source
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          namespace: openshift
+          name: "${SOURCE_IMAGE}"
+    output:
+      to:
+        kind: ImageStreamTag
+        name: "${APP_NAME}:latest"
+    postCommit: {}
+    resources: {}
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    name: "${APP_NAME}"
+    namespace: ${NAMESPACE}
+    labels:
+      app: "${APP_NAME}"
+  spec:
+    strategy:
+      type: Rolling
+      rollingParams:
+        updatePeriodSeconds: 1
+        intervalSeconds: 1
+        timeoutSeconds: 600
+        maxUnavailable: 25%
+        maxSurge: 25%
+      resources: {}
+    triggers:
+      - type: ImageChange
+        imageChangeParams:
+          automatic: true
+          containerNames:
+            - ${APP_NAME}
+          from:
+            kind: ImageStreamTag
+            namespace: ${NAMESPACE}
+            name: '${APP_NAME}:latest'
+    replicas: 1
+    selector:
+      deploymentconfig: "${APP_NAME}"
+      app: "${APP_NAME}"
+    template:
+      metadata:
+        name: ${APP_NAME}
+        labels:
+          app: "${APP_NAME}"
+          deploymentconfig: "${APP_NAME}"
+      spec:
+        containers:
+        - name: "${APP_NAME}"
+          image: ""
+          ports:
+          - name: "http"
+            containerPort: 8080
+            protocol: TCP
+          resources: {}
+          imagePullPolicy: Always
+          env: []
+        restartPolicy: Always
+        terminationGracePeriodSeconds: 30
+        securityContext: {}
+parameters:
+- name: NAMESPACE
+  description: Project namespace
+  value: development
+  required: true
+- name: APP_NAME
+  description: Application name
+  value: myapp
+  required: true
+- name: APP_SOURCE_URL
+  description: Application source URL (for example a git repository)
+  value: http://gitlab.cloudapps.example.com/demo_redhat/bgdemo.git
+  required: true
+- name: SUB_DOMAIN
+  description: subdomain of the openshift cluster
+  value: cloudapps.example.com
+  required: true
+- name: SOURCE_IMAGE
+  description: STI Image to use
+  value: nodejs:latest
+  required: true
