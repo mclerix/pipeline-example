@@ -25,7 +25,7 @@ objects:
     triggers:
       - type: ImageChange
         imageChangeParams:
-          automatic: false
+          automatic: true
           containerNames:
             - ${APP_IMAGE_NAME}
           from:
@@ -43,7 +43,7 @@ objects:
       spec:
         containers:
           - name: ${APP_IMAGE_NAME}
-            image: ""
+            image: "${APP_IMAGE_NAME}"
             resources: {}
             terminationMessagePath: /dev/termination-log
             imagePullPolicy: Always

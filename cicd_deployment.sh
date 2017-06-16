@@ -394,9 +394,8 @@ function do_deploy_pipeline() {
     -n production
 
   # Deploy reference application
-  oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/generic-cicd-template.json \
+  oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/generic-cicd-template.yml \
     -p APP_SOURCE_URL=http://gitlab.cloudapps.example.com/$USER_USERNAME/$REFERENCE_APPLICATION_NAME.git \
-    -p DOCKER_REGISTRY_IP=$REGISTRY_IP \
     -p SUB_DOMAIN=$SUB_DOMAIN \
     -n development
 
