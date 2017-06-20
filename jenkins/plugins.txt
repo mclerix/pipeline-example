@@ -1,2 +1,2 @@
-blueocean
+blueocean:1.0.1
 dependency-check-jenkins-plugin
