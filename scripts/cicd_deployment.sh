@@ -31,7 +31,7 @@ PROD_ENV=$PROJECT_NAME-production
 SUB_DOMAIN="cloudapps01.openhybridcloud.io"
 
 # CICD stack definition
-GITLAB_APPLICATION_HOSTNAME="gitlab.$SUB_DOMAIN"
+GITLAB_APPLICATION_HOSTNAME="gitlab-$PROJECT_NAME.$SUB_DOMAIN"
 GITLAB_ROOT_PASSWORD="gitlab123"
 REFERENCE_APPLICATION_NAME="angulartodo"
 REFERENCE_APPLICATION_IMPORT_URL="https://github.com/clerixmaxime/node-todo.git"
