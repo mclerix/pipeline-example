@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  name: basic-pipeline
+  labels:
+    name: basic-pipeline
+  annotations:
+    pipeline.alpha.openshift.io/uses: '[{"name": "myapp", "namespace": "", "kind": "DeploymentConfig"}]'
+spec:
+  triggers:
+    - type: GitHub
+      github:
+        secret: secret101
+    - type: Generic
+      generic:
+        secret: secret101
+  runPolicy: Serial
+  source:
+    type: None
+  strategy:
+    type: JenkinsPipeline
+    jenkinsPipelineStrategy:
+      jenkinsfile: >-
+        node('maven') {
+
+            stage 'Development - Build'
+
+            openshiftBuild(namespace: 'development', buildConfig: 'myapp',
+            showBuildLogs: 'true')
+
+
+            stage 'Development - Deploy'
+
+            openshiftDeploy(namespace: 'development', deploymentConfig: 'myapp')
+
+            openshiftScale(namespace: 'development', deploymentConfig:
+            'myapp',replicaCount: '1')
+
+            stage 'Test - Deploy'
+
+            openshiftTag(namespace: 'development', sourceStream: 'myapp',
+            sourceTag: 'latest', destinationStream: 'myapp', destinationTag:
+            'promoteToQA')
+
+            openshiftDeploy(namespace: 'test', deploymentConfig: 'myapp')
+
+            openshiftScale(namespace: 'test', deploymentConfig:
+            'myapp',replicaCount: '2')
+
+        }
+  output: {}
+  resources: {}
+  postCommit: {}

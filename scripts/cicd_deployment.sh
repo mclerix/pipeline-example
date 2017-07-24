@@ -17,27 +17,42 @@
 # su - cicd_deployment.sh
 
 ############ VARIABLES ############
+# Define demonstration type, by default basic. Could be basic or advanced
+TYPE=${1:-basic}
 # CICD project definition
-PROJECT_NAME="cicd"
-PROJECT_DISPLAY_NAME="CI/CD Environment"
-PROJECT_DESCRIPTION="CI/CD Environment using Jenkins, Gitlab and SonarQube"
+PROJECT_NAME="cicd-"$TYPE
+PROJECT_DISPLAY_NAME="CI/CD Environment - "$TYPE
+# CICD environments name defintion
+DEV_ENV=$PROJECT_NAME-development
+TEST_ENV=$PROJECT_NAME-test
+PROD_ENV=$PROJECT_NAME-production
+
 # Cluster-related
-NFS_SERVER_HOSTNAME="rhel-openshift.example.com"
-SUB_DOMAIN="cloudapps.example.com"
+SUB_DOMAIN="cloudapps01.openhybridcloud.io"
+
 # CICD stack definition
 GITLAB_APPLICATION_HOSTNAME="gitlab.$SUB_DOMAIN"
 GITLAB_ROOT_PASSWORD="gitlab123"
-SONARQUBE_APPLICATION_HOSTNAME="sonarqube.$SUB_DOMAIN"
-PIPELINE_URL="https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/pipeline-definition.yml"
 REFERENCE_APPLICATION_NAME="angulartodo"
 REFERENCE_APPLICATION_IMPORT_URL="https://github.com/clerixmaxime/node-todo.git"
-USER_NAME="dev_redhat"
-USER_USERNAME="dev_redhat"
-USER_MAIL="dev@redhat.com"
-USER_PASSWORD="dev_redhat"
+# Gitlab user definition
+USER_NAME="demo_cicd1"
+USER_USERNAME="demo_cicd1"
+USER_MAIL="demo_cicd1@redhat.com"
+USER_PASSWORD="demo_cicd1"
+
 # Checking deployment configuration
 DEPLOYMENT_CHECK_INTERVAL=10 # Time in seconds between each check
 DEPLOYMENT_CHECK_TIMES=120 # Total number of check
+
+if [ $TYPE = "basic" ]; then
+  PROJECT_DESCRIPTION="Basic CI/CD Environment using Jenkins & Gitlab"
+  PIPELINE_URL="https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/pipelines/pipeline-basic.yml"
+else
+  PROJECT_DESCRIPTION="Advanced CI/CD Environment using Jenkins, Gitlab and SonarQube"
+  PIPELINE_URL="https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/pipelines/pipeline-advanced.yml"
+  SONARQUBE_APPLICATION_HOSTNAME="sonarqube.$SUB_DOMAIN"
+fi
 
 ###################################
 function wait_for_application_deployment() {
@@ -117,147 +132,6 @@ function do_OCP_setup () {
   echo "SETUP rights for the project: $PROJECT_NAME"
   oadm policy add-scc-to-group anyuid system:serviceaccounts:$PROJECT_NAME
 
-  do_persistent_volumes
-}
-
-function do_persistent_volumes () {
-  # Create Directory in /exports for persistent volumes
-  echo
-  echo "--> Creating directories for persistent volumes on NFS Server"
-  echo
-  mkdir -p /exports/jenkins /exports/gitlab /exports/gitlab1 /exports/gitlab2 /exports/gitlab3 /exports/sonar_mysql
-  # Set ownership of jenkins directory to nfsnobody user/group and set permissions
-  chown -R nfsnobody:nfsnobody /exports/jenkins/ /exports/gitlab /exports/gitlab1 /exports/gitlab2 /exports/gitlab3 /exports/sonar_mysql
-  chmod -R 777 /exports/jenkins /exports/gitlab /exports/gitlab1 /exports/gitlab2 /exports/gitlab3 /exports/sonar_mysql
-
-  cat <<- EOF >> /etc/exports.d/openshift-ansible.exports
-  /exports/jenkins *(rw,root_squash)
-  /exports/gitlab *(rw,root_squash)
-  /exports/gitlab1 *(rw,root_squash)
-  /exports/gitlab2 *(rw,root_squash)
-  /exports/gitlab3 *(rw,root_squash)
-  /exports/sonar_mysql *(rw,root_squash)
-EOF
-
-  exportfs -r
-
-  # Create the Persistent Volume objects within Openshift
-  echo "--> Creating persistent volumes for Jenkins"
-  echo
-  echo '{
-  "apiVersion": "v1",
-  "kind": "PersistentVolume",
-  "metadata": {
-    "name": "jenkins-volume"
-  },
-  "spec": {
-    "capacity": {
-        "storage": "5Gi"
-        },
-    "accessModes": [ "ReadWriteOnce", "ReadWriteMany" ],
-    "nfs": {
-        "path": "/exports/jenkins",
-        "server": "'$NFS_SERVER_HOSTNAME'"
-    }
-  }
-  }' | oc create -f -
-  echo
-  echo "--> Persistent volume for Jenkins created"
-  echo
-  echo "--> Creating persistent volumes for Gitlab"
-  echo
-  echo '{
-  "apiVersion": "v1",
-  "kind": "PersistentVolume",
-  "metadata": {
-    "name": "gitlab-volume"
-  },
-  "spec": {
-    "capacity": {
-        "storage": "10Gi"
-        },
-    "accessModes": [ "ReadWriteOnce","ReadWriteMany" ],
-    "nfs": {
-        "path": "/exports/gitlab",
-        "server": "'$NFS_SERVER_HOSTNAME'"
-    }
-  }
-  }' | oc create -f -
-  echo '{
-  "apiVersion": "v1",
-  "kind": "PersistentVolume",
-  "metadata": {
-    "name": "gitlab1-volume"
-  },
-  "spec": {
-    "capacity": {
-        "storage": "5Gi"
-        },
-    "accessModes": [ "ReadWriteOnce","ReadWriteMany" ],
-    "nfs": {
-        "path": "/exports/gitlab1",
-        "server": "'$NFS_SERVER_HOSTNAME'"
-    }
-  }
-  }' | oc create -f -
-  echo '{
-  "apiVersion": "v1",
-  "kind": "PersistentVolume",
-  "metadata": {
-    "name": "gitlab2-volume"
-  },
-  "spec": {
-    "capacity": {
-        "storage": "5Gi"
-        },
-    "accessModes": [ "ReadWriteOnce","ReadWriteMany" ],
-    "nfs": {
-        "path": "/exports/gitlab2",
-        "server": "'$NFS_SERVER_HOSTNAME'"
-    }
-  }
-  }' | oc create -f -
-  echo '{
-  "apiVersion": "v1",
-  "kind": "PersistentVolume",
-  "metadata": {
-    "name": "gitlab3-volume"
-  },
-  "spec": {
-    "capacity": {
-        "storage": "5Gi"
-        },
-    "accessModes": [ "ReadWriteOnce","ReadWriteMany" ],
-    "nfs": {
-        "path": "/exports/gitlab3",
-        "server": "'$NFS_SERVER_HOSTNAME'"
-    }
-  }
-  }' | oc create -f -
-  echo
-  echo "--> Persistent volumes for Gitlab created"
-  echo
-  echo "--> Creating persistent volumes for SonarQube"
-  echo
-  echo '{
-  "apiVersion": "v1",
-  "kind": "PersistentVolume",
-  "metadata": {
-    "name": "sonarqube-pv"
-  },
-  "spec": {
-    "capacity": {
-        "storage": "5Gi"
-        },
-    "accessModes": [ "ReadWriteOnce","ReadWriteMany" ],
-    "nfs": {
-        "path": "/exports/sonar_mysql",
-        "server": "'$NFS_SERVER_HOSTNAME'"
-    }
-  }
-  }' | oc create -f -
-  echo "--> Persistent volumes for SonarQube created"
-
   do_jenkins
 }
 
@@ -266,13 +140,17 @@ function do_jenkins() {
   oc new-app jenkins-persistent -n $PROJECT_NAME
   echo "--> Deploying Jenkins on Openshift $PROJECT_NAME"
 
-  do_sonarqube
+  if [ $TYPE = "basic" ]; then
+    do_gitlab
+  else
+    do_sonarqube
+  fi
 }
 
 function do_sonarqube() {
 
   echo "--> Dowloading SonarQube template"
-  wget https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/sonarqube-template.yml -O ./sonar-template.yml
+  wget https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/templates/sonarqube-template.yml -O ./sonar-template.yml
   echo "--> Importing SonarQube template"
   oc create -f ./sonar-template.yml -n $PROJECT_NAME
   echo "--> SonarQube template imported"
@@ -339,10 +217,10 @@ function do_deploy_pipeline() {
   # Create the pipeline
   oc create -f $PIPELINE_URL -n $PROJECT_NAME
 
-  # Instantiate the environments
+  # Instantiate environments
   #  --> Project development
-  oc new-project development --display-name="CICD - Development"
-  oadm policy add-role-to-user edit system:serviceaccount:$PROJECT_NAME:jenkins -n development
+  oc new-project $DEV_ENV --display-name="CICD - Development"
+  oadm policy add-role-to-user edit system:serviceaccount:$PROJECT_NAME:jenkins -n $DEV_ENV
   #  Create database for dev environment
   oc new-app mongodb-ephemeral \
     -p MONGODB_USER=mongo \
@@ -350,12 +228,12 @@ function do_deploy_pipeline() {
     -p MONGODB_ADMIN_PASSWORD=mongo \
     -p MONGODB_DATABASE=mongo \
     -p DATABASE_SERVICE_NAME=mongo-todo \
-    -n development
+    -n $DEV_ENV
 
   #  --> Project test
-  oc new-project test --display-name="CICD - Test"
-  oadm policy add-role-to-user edit system:serviceaccount:$PROJECT_NAME:jenkins -n test
-  oadm policy add-role-to-group system:image-puller system:serviceaccounts:test -n development
+  oc new-project $TEST_ENV  --display-name="CICD - Test"
+  oadm policy add-role-to-user edit system:serviceaccount:$PROJECT_NAME:jenkins -n $TEST_ENV
+  oadm policy add-role-to-group system:image-puller system:serviceaccounts:$TEST_ENV -n $DEV_ENV
   #  Create database for test environment
   oc new-app mongodb-ephemeral \
     -p MONGODB_USER=mongo \
@@ -363,41 +241,43 @@ function do_deploy_pipeline() {
     -p MONGODB_ADMIN_PASSWORD=mongo \
     -p MONGODB_DATABASE=mongo \
     -p DATABASE_SERVICE_NAME=mongo-todo \
-    -n test
+    -n $TEST_ENV
 
-  #  --> Project production
-  oc new-project production --display-name="CICD - Production"
-  oadm policy add-role-to-user edit system:serviceaccount:$PROJECT_NAME:jenkins -n production
-  oadm policy add-role-to-group system:image-puller system:serviceaccounts:production -n development
-  #  Create database for production environment
-  oc new-app mongodb-ephemeral \
-    -p MONGODB_USER=mongo \
-    -p MONGODB_PASSWORD=mongo \
-    -p MONGODB_ADMIN_PASSWORD=mongo \
-    -p MONGODB_DATABASE=mongo \
-    -p DATABASE_SERVICE_NAME=mongo-todo \
-    -n production
+  if [ $TYPE = "advanced" ]; then
+    #  --> Project production
+    oc new-project $PROD_ENV --display-name="CICD - Production"
+    oadm policy add-role-to-user edit system:serviceaccount:$PROJECT_NAME:jenkins -n $PROD_ENV
+    oadm policy add-role-to-group system:image-puller system:serviceaccounts:$PROD_ENV -n $DEV_ENV
+    #  Create database for production environment
+    oc new-app mongodb-ephemeral \
+      -p MONGODB_USER=mongo \
+      -p MONGODB_PASSWORD=mongo \
+      -p MONGODB_ADMIN_PASSWORD=mongo \
+      -p MONGODB_DATABASE=mongo \
+      -p DATABASE_SERVICE_NAME=mongo-todo \
+      -n $PROD_ENV
 
-  # Deploy the test and production objects
-  oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/env-template.yml \
-    -p NAMESPACE="test" \
+    oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/templates/env-template.yml \
+      -p NAMESPACE=$PROD_ENV \
+      -p APP_IMAGE_TAG="promoteToProd" \
+      -p HOSTNAME=todo.$SUB_DOMAIN \
+      -p POD_LIMITATION="20" \
+      -n $PROD_ENV
+  fi
+
+  # Deploy the test  objects
+  oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/templates/env-template.yml \
+    -p NAMESPACE=$TEST_ENV \
     -p APP_IMAGE_TAG="promoteToQA" \
-    -p HOSTNAME=myapp-test.$SUB_DOMAIN \
+    -p HOSTNAME=myapp-$TEST_ENV.$SUB_DOMAIN \
     -p POD_LIMITATION="4" \
-    -n test
-
-  oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/env-template.yml \
-    -p NAMESPACE="production" \
-    -p APP_IMAGE_TAG="promoteToProd" \
-    -p HOSTNAME=myapp.$SUB_DOMAIN \
-    -p POD_LIMITATION="20" \
-    -n production
+    -n $TEST_ENV
 
   # Deploy reference application
-  oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/generic-cicd-template.yml \
-    -p APP_SOURCE_URL=http://gitlab.cloudapps.example.com/$USER_USERNAME/$REFERENCE_APPLICATION_NAME.git \
+  oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/templates/generic-cicd-template.yml \
+    -p APP_SOURCE_URL=http://GITLAB_APPLICATION_HOSTNAME/$USER_USERNAME/$REFERENCE_APPLICATION_NAME.git \
     -p SUB_DOMAIN=$SUB_DOMAIN \
-    -n development
+    -n $DEV_ENV
 
   # Set policyBindings for CICD users
   # Admin right
@@ -438,6 +318,12 @@ function do_add_webhook() {
 }
 
 # Test if oc CLI is available
+if [ $TYPE = "basic" ]; then
+  echo "=> Deployment of a basic demonstration";
+else
+  echo "=> Deployment of an advanced demonstration";
+fi
+
 if hash oc 2>/dev/null; then
   do_OCP_setup
 else
