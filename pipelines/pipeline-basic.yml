@@ -25,29 +25,34 @@ spec:
 
             stage 'Development - Build'
 
-            openshiftBuild(namespace: 'development', buildConfig: 'myapp',
+            openshiftBuild(namespace: '${env.DEV_ENV}', buildConfig: 'myapp',
             showBuildLogs: 'true')
 
 
             stage 'Development - Deploy'
 
-            openshiftDeploy(namespace: 'development', deploymentConfig: 'myapp')
+            openshiftDeploy(namespace: '${env.DEV_ENV}'', deploymentConfig: 'myapp')
 
-            openshiftScale(namespace: 'development', deploymentConfig:
+            openshiftScale(namespace: '${env.DEV_ENV}'', deploymentConfig:
             'myapp',replicaCount: '1')
 
             stage 'Test - Deploy'
 
-            openshiftTag(namespace: 'development', sourceStream: 'myapp',
+            openshiftTag(namespace: '${env.DEV_ENV}'', sourceStream: 'myapp',
             sourceTag: 'latest', destinationStream: 'myapp', destinationTag:
             'promoteToQA')
 
-            openshiftDeploy(namespace: 'test', deploymentConfig: 'myapp')
+            openshiftDeploy(namespace: '${env.TEST_ENV}'', deploymentConfig: 'myapp')
 
-            openshiftScale(namespace: 'test', deploymentConfig:
+            openshiftScale(namespace: '${env.TEST_ENV}', deploymentConfig:
             'myapp',replicaCount: '2')
 
         }
+      env:
+        - name: "DEV_ENV"
+          value: ""
+        - name: "TEST_ENV"
+          value: ""
   output: {}
   resources: {}
   postCommit: {}

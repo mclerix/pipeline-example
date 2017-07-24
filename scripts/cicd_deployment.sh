@@ -215,7 +215,11 @@ function do_populate_gitlab() {
 function do_deploy_pipeline() {
 
   # Create the pipeline
-  oc create -f $PIPELINE_URL -n $PROJECT_NAME
+  oc create -f $PIPELINE_URL \
+    -p DEV_ENV=$DEV_ENV \
+    -p TEST_ENV=$TEST_ENV \
+    -p PROD_ENV=$PROD_ENV \
+    -n $PROJECT_NAME
 
   # Instantiate environments
   #  --> Project development
@@ -243,6 +247,27 @@ function do_deploy_pipeline() {
     -p DATABASE_SERVICE_NAME=mongo-todo \
     -n $TEST_ENV
 
+  # Deploy the test  objects
+  oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/templates/env-template.yml \
+    -p NAMESPACE=$TEST_ENV \
+    -p APP_IMAGE_TAG="promoteToQA" \
+    -p HOSTNAME=myapp-$TEST_ENV.$SUB_DOMAIN \
+    -p POD_LIMITATION="4" \
+    -n $TEST_ENV
+
+  # Deploy reference application
+  oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/templates/generic-cicd-template.yml \
+    -p NAMESPACE=$DEV_ENV
+    -p APP_SOURCE_URL=http://$GITLAB_APPLICATION_HOSTNAME/$USER_USERNAME/$REFERENCE_APPLICATION_NAME.git \
+    -p SUB_DOMAIN=$SUB_DOMAIN \
+    -n $DEV_ENV
+
+  # Set policyBindings for CICD users
+  # Admin right
+  oadm policy add-role-to-user admin demo_cicd1 -n $PROJECT_NAME
+  oadm policy add-role-to-user admin demo_cicd1 -n $DEV_ENV
+  oadm policy add-role-to-user admin demo_cicd1 -n $TEST_ENV
+
   if [ $TYPE = "advanced" ]; then
     #  --> Project production
     oc new-project $PROD_ENV --display-name="CICD - Production"
@@ -263,32 +288,10 @@ function do_deploy_pipeline() {
       -p HOSTNAME=todo.$SUB_DOMAIN \
       -p POD_LIMITATION="20" \
       -n $PROD_ENV
+
+      oadm policy add-role-to-user admin demo_cicd1 -n $PROD_ENV
+
   fi
-
-  # Deploy the test  objects
-  oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/templates/env-template.yml \
-    -p NAMESPACE=$TEST_ENV \
-    -p APP_IMAGE_TAG="promoteToQA" \
-    -p HOSTNAME=myapp-$TEST_ENV.$SUB_DOMAIN \
-    -p POD_LIMITATION="4" \
-    -n $TEST_ENV
-
-  # Deploy reference application
-  oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/templates/generic-cicd-template.yml \
-    -p APP_SOURCE_URL=http://GITLAB_APPLICATION_HOSTNAME/$USER_USERNAME/$REFERENCE_APPLICATION_NAME.git \
-    -p SUB_DOMAIN=$SUB_DOMAIN \
-    -n $DEV_ENV
-
-  # Set policyBindings for CICD users
-  # Admin right
-  oadm policy add-role-to-user admin admin_cicd -n cicd
-  oadm policy add-role-to-user admin admin_cicd -n development
-  oadm policy add-role-to-user admin admin_cicd -n test
-  oadm policy add-role-to-user admin admin_cicd -n production
-  # Environements' users rights
-  oadm policy add-role-to-user admin dev_cicd -n development
-  oadm policy add-role-to-user admin test_cicd -n test
-  oadm policy add-role-to-user admin production_cicd -n production
 
   do_add_webhook
 }
