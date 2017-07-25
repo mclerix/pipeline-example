@@ -1,10 +1,9 @@
 apiVersion: v1
 kind: BuildConfig
 metadata:
-  name: cicdpipeline
-  namespace: cicd
+  name: advanced-pipeline
   labels:
-    name: cicdpipeline
+    name: advanced-pipeline
   annotations:
     pipeline.alpha.openshift.io/uses: '[{"name": "myapp", "namespace": "", "kind": "DeploymentConfig"}]'
 spec:
@@ -22,13 +21,35 @@ spec:
     type: JenkinsPipeline
     jenkinsPipelineStrategy:
       jenkinsfile: >-
+        stage("Unit Tests & Static Code Analysis") {
+            steps {
+                parallel (
+                    "Unit Tests" : {
+                        node('nodejs') {
+                          git branch: 'master', url:'http://gitlab.cloudapps.example.com/dev_redhat/angulartodo.git'
+
+                          sh 'npm install -g jasmine'
+
+                          sh 'jasmine'
+                        }
+                    },
+                    "Static Code Analysis" : {
+                        node('maven') {
+                          git branch: 'master', url:'http://gitlab.cloudapps.example.com/dev_redhat/angulartodo.git'
+
+                          sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.2:sonar -Dsonar.host.url=http://sonarqube:9000'
+                        }
+                    }
+                )
+            }
+        }
+
         node('maven') {
 
             stage 'Development - Build'
 
             openshiftBuild(namespace: 'development', buildConfig: 'myapp',
             showBuildLogs: 'true')
-
 
             stage 'Development - Deploy'
 
@@ -37,25 +58,9 @@ spec:
             openshiftScale(namespace: 'development', deploymentConfig:
             'myapp',replicaCount: '1')
 
-
-            stage 'Development - Static Code Analysis'
-
-            git branch: 'master', url:'http://gitlab.cloudapps.example.com/dev_redhat/angulartodo.git'
-
-            sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.2:sonar -Dsonar.host.url=http://sonarqube:9000'
-
         }
 
         node('nodejs') {
-
-            stage 'Development - Unit Testing'
-
-            git branch: 'master', url:'http://gitlab.cloudapps.example.com/dev_redhat/angulartodo.git'
-
-            sh 'npm install -g jasmine'
-
-            sh 'jasmine'
-
 
             stage 'Test - Deploy'
 

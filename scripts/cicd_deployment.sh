@@ -21,7 +21,7 @@
 TYPE=${1:-basic}
 # CICD project definition
 PROJECT_NAME="cicd-"$TYPE
-PROJECT_DISPLAY_NAME="CI/CD Environment - "$TYPE
+PROJECT_DISPLAY_NAME="CICD Environment - "$TYPE
 # CICD environments name defintion
 DEV_ENV=$PROJECT_NAME-development
 TEST_ENV=$PROJECT_NAME-test
