@@ -247,12 +247,13 @@ function do_deploy_pipeline() {
   # Deploy the test  objects
   oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/templates/env-template.yml \
     -p NAMESPACE=$TEST_ENV \
+    -p APP_IMAGE_NAMESPACE=$DEV_ENV \
     -p APP_IMAGE_TAG="promoteToQA" \
     -p HOSTNAME=myapp-$TEST_ENV.$SUB_DOMAIN \
     -p POD_LIMITATION="4" \
     -n $TEST_ENV
 
-  # Deploy reference application
+  # Deploy reference application in dev
   oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/templates/generic-cicd-template.yml \
     -p NAMESPACE=$DEV_ENV \
     -p APP_SOURCE_URL=http://$GITLAB_APPLICATION_HOSTNAME/$USER_USERNAME/$REFERENCE_APPLICATION_NAME.git \

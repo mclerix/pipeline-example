@@ -21,7 +21,7 @@ spec:
     type: JenkinsPipeline
     jenkinsPipelineStrategy:
       jenkinsfile: >-
-        node('maven') {
+        node('nodejs') {
 
             stage 'Development - Build'
 
@@ -36,7 +36,7 @@ spec:
             'myapp',replicaCount: '1')
 
             input 'Do you to deploy your application in Test Environment ?'
-            
+
             stage 'Test - Deploy'
 
             openshiftTag(namespace: 'cicd-basic-development', sourceStream: 'myapp',
