@@ -175,7 +175,7 @@ function do_gitlab() {
   echo "--> Dowloading Gitlab template"
   # With latest template versions
   # wget https://gitlab.com/gitlab-org/omnibus-gitlab/raw/master/docker/openshift-template.json -O ./gitlab-template.json
-  wget https://gitlab.com/gitlab-org/omnibus-gitlab/raw/c025ff897de5819b21f479dcee8d32e17295ddf4/docker/openshift-template.json -O ./gitlab-template.json
+  wget https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/templates/gitlab-template.json -O ./gitlab-template.json
   # Import Gitlab Template
   echo "--> Importing Gitlab template"
   oc create -f ./gitlab-template.json -n $PROJECT_NAME
