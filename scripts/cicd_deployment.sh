@@ -216,9 +216,6 @@ function do_deploy_pipeline() {
 
   # Create the pipeline
   oc create -f $PIPELINE_URL \
-    -p DEV_ENV=$DEV_ENV \
-    -p TEST_ENV=$TEST_ENV \
-    -p PROD_ENV=$PROD_ENV \
     -n $PROJECT_NAME
 
   # Instantiate environments
@@ -257,7 +254,7 @@ function do_deploy_pipeline() {
 
   # Deploy reference application
   oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/templates/generic-cicd-template.yml \
-    -p NAMESPACE=$DEV_ENV
+    -p NAMESPACE=$DEV_ENV \
     -p APP_SOURCE_URL=http://$GITLAB_APPLICATION_HOSTNAME/$USER_USERNAME/$REFERENCE_APPLICATION_NAME.git \
     -p SUB_DOMAIN=$SUB_DOMAIN \
     -n $DEV_ENV
@@ -284,6 +281,7 @@ function do_deploy_pipeline() {
 
     oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/templates/env-template.yml \
       -p NAMESPACE=$PROD_ENV \
+      -p APP_IMAGE_NAMESPACE=$DEV_ENV \
       -p APP_IMAGE_TAG="promoteToProd" \
       -p HOSTNAME=todo.$SUB_DOMAIN \
       -p POD_LIMITATION="20" \
@@ -308,7 +306,7 @@ function do_add_webhook() {
     cp ./jq /usr/bin
   fi
 
-  WEBHOOK_URL=$(oc describe bc cicdpipeline -n $PROJECT_NAME | grep URL | grep generic | cut -d':' -f2-4)
+  WEBHOOK_URL=$(oc describe bc basic-pipeline -n $PROJECT_NAME | grep URL | grep generic | cut -d':' -f2-4)
 
   PRIVATE_TOKEN=$(curl http://$(echo "$GITLAB_APPLICATION_HOSTNAME")/api/v3/session --data "login=$(echo "$USER_USERNAME")&password=$(echo "$USER_PASSWORD")" | python -c "import sys, json; print json.load(sys.stdin)['private_token']")
 
