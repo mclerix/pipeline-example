@@ -25,34 +25,28 @@ spec:
 
             stage 'Development - Build'
 
-            openshiftBuild(namespace: '${env.DEV_ENV}', buildConfig: 'myapp',
+            openshiftBuild(namespace: 'cicd-basic-development', buildConfig: 'myapp',
             showBuildLogs: 'true')
-
 
             stage 'Development - Deploy'
 
-            openshiftDeploy(namespace: '${env.DEV_ENV}'', deploymentConfig: 'myapp')
+            openshiftDeploy(namespace: 'cicd-basic-development', deploymentConfig: 'myapp')
 
-            openshiftScale(namespace: '${env.DEV_ENV}'', deploymentConfig:
+            openshiftScale(namespace: 'cicd-basic-development', deploymentConfig:
             'myapp',replicaCount: '1')
 
             stage 'Test - Deploy'
 
-            openshiftTag(namespace: '${env.DEV_ENV}'', sourceStream: 'myapp',
+            openshiftTag(namespace: 'cicd-basic-development', sourceStream: 'myapp',
             sourceTag: 'latest', destinationStream: 'myapp', destinationTag:
             'promoteToQA')
 
-            openshiftDeploy(namespace: '${env.TEST_ENV}'', deploymentConfig: 'myapp')
+            openshiftDeploy(namespace: 'cicd-basic-development', deploymentConfig: 'myapp')
 
-            openshiftScale(namespace: '${env.TEST_ENV}', deploymentConfig:
+            openshiftScale(namespace: 'cicd-basic-test', deploymentConfig:
             'myapp',replicaCount: '2')
 
         }
-      env:
-        - name: "DEV_ENV"
-          value: ""
-        - name: "TEST_ENV"
-          value: ""
   output: {}
   resources: {}
   postCommit: {}
