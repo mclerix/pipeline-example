@@ -43,7 +43,7 @@ spec:
             sourceTag: 'latest', destinationStream: 'myapp', destinationTag:
             'promoteToQA')
 
-            openshiftDeploy(namespace: 'cicd-basic-development', deploymentConfig: 'myapp')
+            openshiftDeploy(namespace: 'cicd-basic-test', deploymentConfig: 'myapp')
 
             openshiftScale(namespace: 'cicd-basic-test', deploymentConfig:
             'myapp',replicaCount: '2')
