@@ -1,5 +1,7 @@
-# Feuille de route démonstration CICD
-## Déploiement
+**/!\ This file should be updated**
+
+# Roadbook demonstration CICD
+## Deployment
 1. Execute cicd.sh script `time ./cicd_deployment_light.sh` or `time ./cicd_deployment.sh` (with PersistentVolumes creation).
 > time is not required, it is just to show how fast it is to deploy the whole stack.
 2. Log in to the OpenShift web console with the credentials admin_cicd/admin_cicd.

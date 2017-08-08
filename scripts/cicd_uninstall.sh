@@ -8,6 +8,7 @@
 # Date: 27/02/17
 #
 ##############################################################
+# Value should be replaced with your own REGISTRY IP
 REGISTRY_IP=172.30.253.239:5000
 ##############################################################
 
@@ -18,7 +19,6 @@ docker rmi -f $REGISTRY_IP/cicd/nexus3:latest \
               $REGISTRY_IP/development/myapp:promoteToQA \
               $REGISTRY_IP/development/myapp:promoteToProd
 oc delete project cicd development test production
-oc delete pv gitlab-volume gitlab1-volume gitlab2-volume gitlab3-volume jenkins-volume sonarqube-pv
 
 rm -rf /exports/gitlab* /exports/jenkins /exports/sonar_mysql
 rm -f ./gitlab-template.json ./sonar-template.json

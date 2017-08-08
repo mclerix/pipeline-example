@@ -1,3 +1,5 @@
+**/!\ This file should be updated**
+
 # Purpose of pipeline-example repository
 Demonstrate CICD pipeline in Openshift. This demonstration includes the following cases:
 * Jenkins pipeline
