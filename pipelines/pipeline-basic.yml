@@ -35,7 +35,7 @@ spec:
             openshiftScale(namespace: 'cicd-basic-development', deploymentConfig:
             'myapp',replicaCount: '1')
 
-            input 'Do you to deploy your application in Test Environment ?'
+            input 'Do you want to deploy the application in Test Environment ?'
 
             stage 'Test - Deploy'
 
