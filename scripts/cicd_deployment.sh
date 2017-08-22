@@ -250,7 +250,7 @@ function do_deploy_pipeline() {
     -p APP_IMAGE_NAMESPACE=$DEV_ENV \
     -p APP_IMAGE_TAG="promoteToQA" \
     -p HOSTNAME=myapp-$TEST_ENV.$SUB_DOMAIN \
-    -p POD_LIMITATION="4" \
+    -p POD_LIMITATION="6" \
     -n $TEST_ENV
   # Disable imageChange trigger in test environment
   oc set triggers dc/myapp --manual -n $TEST_ENV
