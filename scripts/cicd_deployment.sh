@@ -253,7 +253,7 @@ function do_deploy_pipeline() {
     -p POD_LIMITATION="4" \
     -n $TEST_ENV
   # Disable imageChange trigger in test environment
-  oc set-triggers dc/myapp --manual -n $TEST_ENV
+  oc set triggers dc/myapp --manual -n $TEST_ENV
 
   # Deploy reference application in dev
   oc new-app https://raw.githubusercontent.com/clerixmaxime/pipeline-example/master/templates/generic-cicd-template.yml \
@@ -262,7 +262,7 @@ function do_deploy_pipeline() {
     -p SUB_DOMAIN=$SUB_DOMAIN \
     -n $DEV_ENV
   # Disable imageChange trigger in test environment
-  oc set-triggers dc/myapp --manual -n $DEV_ENV
+  oc set triggers dc/myapp --manual -n $DEV_ENV
   
   # Set policyBindings for CICD users
   # Admin right
@@ -292,7 +292,8 @@ function do_deploy_pipeline() {
       -p POD_LIMITATION="20" \
       -n $PROD_ENV
 
-      oadm policy add-role-to-user admin demo_cicd1 -n $PROD_ENV
+    oc set triggers dc/myapp --manual -n $PROD_ENV
+    oadm policy add-role-to-user admin demo_cicd1 -n $PROD_ENV
 
   fi
 
